@@ -109,7 +109,7 @@ export default function Home() {
     dragRef.current = null;
   };
 
-  // DELETE
+  // DELETE BOX
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (selectedBox === null) return;
@@ -124,7 +124,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selectedBox]);
 
-  // EXPORT (FINAL FIX)
+  // EXPORT (FINAL FIXED)
   const applyToPDF = async () => {
     if (!file) return;
 
@@ -159,7 +159,7 @@ export default function Home() {
 
     const url = URL.createObjectURL(blob);
 
-    // ✅ GUARANTEED DOWNLOAD
+    // ✅ FORCE DOWNLOAD
     const link = document.createElement("a");
     link.href = url;
     link.download = "edited.pdf";
@@ -168,7 +168,8 @@ export default function Home() {
     link.click();
     document.body.removeChild(link);
 
-    URL.revokeObjectURL(url);
+    // cleanup
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
   return (
@@ -269,7 +270,8 @@ export default function Home() {
                     top: b.y,
                     fontSize: b.fontSize,
                     color: b.color,
-                    border: selectedBox === i ? "2px solid blue" : "1px dashed black",
+                    border:
+                      selectedBox === i ? "2px solid blue" : "1px dashed black",
                     cursor: "move",
                     background: "#fff",
                     padding: 2,
