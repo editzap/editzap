@@ -118,7 +118,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selectedBox, boxes]);
 
-  // EXPORT PDF
+  // EXPORT
   const applyToPDF = async () => {
     if (!file) return;
 
@@ -170,17 +170,18 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ADSENSE LINKS */}
+      {/* 🔥 DESCRIPTION (IMPORTANT FOR ADSENSE) */}
       <div style={{ textAlign: "center", marginTop: "10px" }}>
-        <a href="/privacy" style={{ marginRight: "15px", color: "#000", fontWeight: "600" }}>
-          Privacy
-        </a>
-        <a href="/about" style={{ marginRight: "15px", color: "#000", fontWeight: "600" }}>
-          About
-        </a>
-        <a href="/contact" style={{ color: "#000", fontWeight: "600" }}>
-          Contact
-        </a>
+        <p style={{ fontWeight: "500" }}>
+          EditZap is a free online PDF editor to add text anywhere easily and quickly.
+        </p>
+      </div>
+
+      {/* LINKS */}
+      <div style={{ textAlign: "center", marginTop: "5px" }}>
+        <a href="/privacy" style={link}>Privacy</a>
+        <a href="/about" style={link}>About</a>
+        <a href="/contact" style={link}>Contact</a>
       </div>
 
       {/* MAIN */}
@@ -324,3 +325,9 @@ const tabBtn = (active: boolean): React.CSSProperties => ({
   background: active ? "#000" : "#eee",
   color: active ? "#fff" : "#000",
 });
+
+const link: React.CSSProperties = {
+  marginRight: "15px",
+  color: "#000",
+  fontWeight: "600",
+};
