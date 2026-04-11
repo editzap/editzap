@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "EditZap - Free PDF Editor",
-  description: "Edit PDF online for free",
+  title: "EditZap",
+  description: "Free online PDF editor",
 };
 
 export default function RootLayout({
@@ -31,8 +31,8 @@ export default function RootLayout({
           </div>
         </div>
 
-        {/* PAGE CONTENT */}
-        <div style={{ padding: 20 }}>{children}</div>
+        {/* CONTENT */}
+        <div>{children}</div>
 
         {/* FOOTER */}
         <div
@@ -43,8 +43,9 @@ export default function RootLayout({
             borderTop: "1px solid #ddd",
           }}
         >
-          © 2026 EditZap — All rights reserved
+          © 2026 EditZap
         </div>
+
       </body>
     </html>
   );
