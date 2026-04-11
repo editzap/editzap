@@ -25,6 +25,7 @@ export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<number | null>(null);
 
+  // UPLOAD
   const handleUpload = (e: any) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -35,6 +36,7 @@ export default function Home() {
     setSelected(null);
   };
 
+  // CLOSE
   const handleClose = () => {
     setFile(null);
     setPdfUrl(null);
@@ -42,6 +44,7 @@ export default function Home() {
     setSelected(null);
   };
 
+  // ADD BOX
   const handleClick = (e: any) => {
     const rect = e.currentTarget.getBoundingClientRect();
 
@@ -58,6 +61,7 @@ export default function Home() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  // SELECT
   const handleSelect = (i: number, e: any) => {
     e.stopPropagation();
     setSelected(i);
@@ -65,6 +69,7 @@ export default function Home() {
     setSize(boxes[i].size);
   };
 
+  // UPDATE
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
@@ -75,6 +80,7 @@ export default function Home() {
     });
   };
 
+  // DRAG
   const startDrag = (i: number, e: any) => {
     e.stopPropagation();
     dragRef.current = i;
@@ -100,6 +106,7 @@ export default function Home() {
     dragRef.current = null;
   };
 
+  // DELETE
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (selected === null) return;
@@ -114,6 +121,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selected]);
 
+  // EXPORT
   const applyToPDF = async () => {
     if (!file) return;
 
@@ -173,7 +181,7 @@ export default function Home() {
         ))}
       </div>
 
-      {/* EDIT */}
+      {/* EDIT TAB */}
       {activeTab === "edit" && (
         <>
           <input type="file" onChange={handleUpload} />
@@ -241,6 +249,30 @@ export default function Home() {
           )}
         </>
       )}
+
+      {/* CONTENT FOR ADSENSE */}
+      <div style={{ marginTop: 40 }}>
+        <h2>Free Online PDF Editor - EditZap</h2>
+
+        <p>
+          EditZap is a free online PDF editor that allows you to easily add text to your documents.
+          Upload your file, edit instantly, and download your updated PDF in seconds.
+        </p>
+
+        <h3>Features</h3>
+        <ul>
+          <li>Add text to PDF</li>
+          <li>Fast and secure editing</li>
+          <li>No installation required</li>
+          <li>Works on all devices</li>
+        </ul>
+
+        <h3>Why Choose EditZap?</h3>
+        <p>
+          EditZap is simple, fast, and completely free. Unlike other tools, it does not require
+          signup and works directly in your browser.
+        </p>
+      </div>
     </div>
   );
 }
