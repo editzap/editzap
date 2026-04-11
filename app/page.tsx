@@ -25,8 +25,7 @@ export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<number | null>(null);
 
-  // UPLOAD
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = (e: any) => {
     const f = e.target.files?.[0];
     if (!f) return;
 
@@ -36,7 +35,6 @@ export default function Home() {
     setSelected(null);
   };
 
-  // CLOSE PDF
   const handleClose = () => {
     setFile(null);
     setPdfUrl(null);
@@ -44,8 +42,7 @@ export default function Home() {
     setSelected(null);
   };
 
-  // ADD TEXT BOX
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleClick = (e: any) => {
     const rect = e.currentTarget.getBoundingClientRect();
 
     const newBox: Box = {
@@ -61,15 +58,13 @@ export default function Home() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  // SELECT
-  const handleSelect = (i: number, e: React.MouseEvent) => {
+  const handleSelect = (i: number, e: any) => {
     e.stopPropagation();
     setSelected(i);
     setText(boxes[i].text);
     setSize(boxes[i].size);
   };
 
-  // UPDATE BOX
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
@@ -80,14 +75,12 @@ export default function Home() {
     });
   };
 
-  // DRAG START
-  const startDrag = (i: number, e: React.MouseEvent) => {
+  const startDrag = (i: number, e: any) => {
     e.stopPropagation();
     dragRef.current = i;
   };
 
-  // DRAG MOVE
-  const move = (e: React.MouseEvent<HTMLDivElement>) => {
+  const move = (e: any) => {
     if (dragRef.current === null) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -107,7 +100,6 @@ export default function Home() {
     dragRef.current = null;
   };
 
-  // DELETE
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (selected === null) return;
@@ -122,7 +114,6 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selected]);
 
-  // EXPORT (FINAL WORKING)
   const applyToPDF = async () => {
     if (!file) return;
 
@@ -147,57 +138,42 @@ export default function Home() {
 
     const pdfBytes = await pdfDoc.save();
 
-    const uint8 = new Uint8Array(pdfBytes);
-    const blob = new Blob([uint8], { type: "application/pdf" });
+    const blob = new Blob([new Uint8Array(pdfBytes)], {
+      type: "application/pdf",
+    });
 
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "edited.pdf";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "edited.pdf";
+    a.click();
   };
 
   return (
-    <div style={{ padding: 20, maxWidth: 900, margin: "auto", fontFamily: "Arial" }}>
+    <div style={{ maxWidth: 900, margin: "auto" }}>
       
-      {/* HEADER */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 20
-      }}>
-        <h1 style={{ margin: 0 }}>EDITZAP</h1>
-
-        {/* TABS */}
-        <div style={{ display: "flex", gap: 10 }}>
-          {["edit", "merge", "split"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 8,
-                border: "none",
-                fontWeight: "bold",
-                background: activeTab === tab ? "#000" : "#eee",
-                color: activeTab === tab ? "#fff" : "#000",
-                cursor: "pointer"
-              }}
-            >
-              {tab.toUpperCase()}
-            </button>
-          ))}
-        </div>
+      {/* TABS */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+        {["edit", "merge", "split"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 8,
+              fontWeight: "bold",
+              background: activeTab === tab ? "#000" : "#eee",
+              color: activeTab === tab ? "#fff" : "#000",
+              border: "none"
+            }}
+          >
+            {tab.toUpperCase()}
+          </button>
+        ))}
       </div>
 
-      {/* EDIT TAB */}
+      {/* EDIT */}
       {activeTab === "edit" && (
         <>
           <input type="file" onChange={handleUpload} />
@@ -226,7 +202,7 @@ export default function Home() {
             </div>
           )}
 
-          <button style={{ marginTop: 10 }} onClick={applyToPDF}>
+          <button onClick={applyToPDF} style={{ marginTop: 10 }}>
             EXPORT PDF
           </button>
 
@@ -235,25 +211,13 @@ export default function Home() {
               onClick={handleClick}
               onMouseMove={move}
               onMouseUp={stopDrag}
-              style={{
-                position: "relative",
-                marginTop: 20,
-                border: "2px solid black",
-              }}
+              style={{ position: "relative", marginTop: 20, border: "2px solid black" }}
             >
-              <button
-                onClick={handleClose}
-                style={{ position: "absolute", right: 10, zIndex: 10 }}
-              >
+              <button onClick={handleClose} style={{ position: "absolute", right: 10 }}>
                 ✕
               </button>
 
-              <iframe
-                src={pdfUrl}
-                width="100%"
-                height="500px"
-                style={{ pointerEvents: "none" }}
-              />
+              <iframe src={pdfUrl} width="100%" height="500px" style={{ pointerEvents: "none" }} />
 
               {boxes.map((b, i) => (
                 <div
@@ -267,8 +231,7 @@ export default function Home() {
                     fontSize: b.size,
                     border: selected === i ? "2px solid blue" : "1px dashed black",
                     background: "#fff",
-                    padding: 2,
-                    cursor: "move",
+                    padding: 2
                   }}
                 >
                   {b.text || "Type"}
@@ -277,21 +240,6 @@ export default function Home() {
             </div>
           )}
         </>
-      )}
-
-      {/* OTHER TABS */}
-      {activeTab === "merge" && (
-        <div>
-          <h2>Merge PDF</h2>
-          <p>Coming soon</p>
-        </div>
-      )}
-
-      {activeTab === "split" && (
-        <div>
-          <h2>Split PDF</h2>
-          <p>Coming soon</p>
-        </div>
       )}
     </div>
   );
