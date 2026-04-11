@@ -11,6 +11,8 @@ type Box = {
 };
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState("edit");
+
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
@@ -34,7 +36,7 @@ export default function Home() {
     setSelected(null);
   };
 
-  // CLOSE
+  // CLOSE PDF
   const handleClose = () => {
     setFile(null);
     setPdfUrl(null);
@@ -67,7 +69,7 @@ export default function Home() {
     setSize(boxes[i].size);
   };
 
-  // UPDATE
+  // UPDATE BOX
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
@@ -78,12 +80,13 @@ export default function Home() {
     });
   };
 
-  // DRAG
+  // DRAG START
   const startDrag = (i: number, e: React.MouseEvent) => {
     e.stopPropagation();
     dragRef.current = i;
   };
 
+  // DRAG MOVE
   const move = (e: React.MouseEvent<HTMLDivElement>) => {
     if (dragRef.current === null) return;
 
@@ -119,7 +122,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selected]);
 
-  // ✅ FINAL EXPORT (NO ERRORS EVER)
+  // EXPORT (FINAL WORKING)
   const applyToPDF = async () => {
     if (!file) return;
 
@@ -144,7 +147,6 @@ export default function Home() {
 
     const pdfBytes = await pdfDoc.save();
 
-    // 🔥 SAFEST METHOD (NO TYPE ERROR)
     const uint8 = new Uint8Array(pdfBytes);
     const blob = new Blob([uint8], { type: "application/pdf" });
 
@@ -162,83 +164,133 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
-      <h1 style={{ textAlign: "center" }}>EDITZAP</h1>
+    <div style={{ padding: 20, maxWidth: 900, margin: "auto", fontFamily: "Arial" }}>
+      
+      {/* HEADER */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20
+      }}>
+        <h1 style={{ margin: 0 }}>EDITZAP</h1>
 
-      <input type="file" onChange={handleUpload} />
+        {/* TABS */}
+        <div style={{ display: "flex", gap: 10 }}>
+          {["edit", "merge", "split"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "none",
+                fontWeight: "bold",
+                background: activeTab === tab ? "#000" : "#eee",
+                color: activeTab === tab ? "#fff" : "#000",
+                cursor: "pointer"
+              }}
+            >
+              {tab.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {selected !== null && (
-        <div style={{ marginTop: 10 }}>
-          <input
-            ref={inputRef}
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              updateBox({ text: e.target.value });
-            }}
-          />
+      {/* EDIT TAB */}
+      {activeTab === "edit" && (
+        <>
+          <input type="file" onChange={handleUpload} />
 
-          <input
-            type="number"
-            value={size}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              setSize(val);
-              updateBox({ size: val });
-            }}
-            style={{ width: 60 }}
-          />
+          {selected !== null && (
+            <div style={{ marginTop: 10 }}>
+              <input
+                ref={inputRef}
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  updateBox({ text: e.target.value });
+                }}
+              />
+
+              <input
+                type="number"
+                value={size}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setSize(val);
+                  updateBox({ size: val });
+                }}
+                style={{ width: 60 }}
+              />
+            </div>
+          )}
+
+          <button style={{ marginTop: 10 }} onClick={applyToPDF}>
+            EXPORT PDF
+          </button>
+
+          {pdfUrl && (
+            <div
+              onClick={handleClick}
+              onMouseMove={move}
+              onMouseUp={stopDrag}
+              style={{
+                position: "relative",
+                marginTop: 20,
+                border: "2px solid black",
+              }}
+            >
+              <button
+                onClick={handleClose}
+                style={{ position: "absolute", right: 10, zIndex: 10 }}
+              >
+                ✕
+              </button>
+
+              <iframe
+                src={pdfUrl}
+                width="100%"
+                height="500px"
+                style={{ pointerEvents: "none" }}
+              />
+
+              {boxes.map((b, i) => (
+                <div
+                  key={i}
+                  onClick={(e) => handleSelect(i, e)}
+                  onMouseDown={(e) => startDrag(i, e)}
+                  style={{
+                    position: "absolute",
+                    left: b.x,
+                    top: b.y,
+                    fontSize: b.size,
+                    border: selected === i ? "2px solid blue" : "1px dashed black",
+                    background: "#fff",
+                    padding: 2,
+                    cursor: "move",
+                  }}
+                >
+                  {b.text || "Type"}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* OTHER TABS */}
+      {activeTab === "merge" && (
+        <div>
+          <h2>Merge PDF</h2>
+          <p>Coming soon</p>
         </div>
       )}
 
-      <button style={{ marginTop: 10 }} onClick={applyToPDF}>
-        EXPORT PDF
-      </button>
-
-      {pdfUrl && (
-        <div
-          onClick={handleClick}
-          onMouseMove={move}
-          onMouseUp={stopDrag}
-          style={{
-            position: "relative",
-            marginTop: 20,
-            border: "2px solid black",
-          }}
-        >
-          <button
-            onClick={handleClose}
-            style={{ position: "absolute", right: 10 }}
-          >
-            ✕
-          </button>
-
-          <iframe
-            src={pdfUrl}
-            width="100%"
-            height="500px"
-            style={{ pointerEvents: "none" }}
-          />
-
-          {boxes.map((b, i) => (
-            <div
-              key={i}
-              onClick={(e) => handleSelect(i, e)}
-              onMouseDown={(e) => startDrag(i, e)}
-              style={{
-                position: "absolute",
-                left: b.x,
-                top: b.y,
-                fontSize: b.size,
-                border: selected === i ? "2px solid blue" : "1px dashed black",
-                background: "#fff",
-                padding: 2,
-                cursor: "move",
-              }}
-            >
-              {b.text || "Type"}
-            </div>
-          ))}
+      {activeTab === "split" && (
+        <div>
+          <h2>Split PDF</h2>
+          <p>Coming soon</p>
         </div>
       )}
     </div>
