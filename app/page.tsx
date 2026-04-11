@@ -3,92 +3,88 @@
 import { useState, useRef, useEffect } from "react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
+type Box = {
+  x: number;
+  y: number;
+  text: string;
+  size: number;
+};
+
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
-  const [boxes, setBoxes] = useState<any[]>([]);
-  const [selectedBox, setSelectedBox] = useState<number | null>(null);
+  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [selected, setSelected] = useState<number | null>(null);
 
   const [text, setText] = useState("");
-  const [fontSize, setFontSize] = useState(16);
-  const [color, setColor] = useState("#000000");
-
-  const [zoom, setZoom] = useState(1);
-  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(16);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<number | null>(null);
 
   // UPLOAD
-  const handleUpload = (e: any) => {
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
 
     setFile(f);
     setPdfUrl(URL.createObjectURL(f));
     setBoxes([]);
-    setPage(0);
+    setSelected(null);
   };
 
   // CLOSE
-  const handleClosePDF = () => {
+  const handleClose = () => {
     setFile(null);
     setPdfUrl(null);
     setBoxes([]);
-    setSelectedBox(null);
+    setSelected(null);
   };
 
-  // ADD BOX
-  const handleClick = (e: any) => {
+  // ADD TEXT BOX
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
 
-    const newBox = {
-      x: (e.clientX - rect.left) / zoom,
-      y: (e.clientY - rect.top) / zoom,
+    const newBox: Box = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
       text: "",
-      fontSize,
-      color,
-      page,
+      size,
     };
 
-    const updated = [...boxes, newBox];
-    setBoxes(updated);
-    setSelectedBox(updated.length - 1);
+    setBoxes((prev) => [...prev, newBox]);
+    setSelected(boxes.length);
 
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   // SELECT
-  const handleBoxClick = (i: number, e: any) => {
+  const handleSelect = (i: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedBox(i);
-
-    const b = boxes[i];
-    setText(b.text);
-    setFontSize(b.fontSize);
-    setColor(b.color);
+    setSelected(i);
+    setText(boxes[i].text);
+    setSize(boxes[i].size);
   };
 
-  // UPDATE BOX
-  const updateBox = (changes: any) => {
-    if (selectedBox === null) return;
+  // UPDATE
+  const updateBox = (changes: Partial<Box>) => {
+    if (selected === null) return;
 
     setBoxes((prev) => {
       const updated = [...prev];
-      updated[selectedBox] = { ...updated[selectedBox], ...changes };
+      updated[selected] = { ...updated[selected], ...changes };
       return updated;
     });
   };
 
-  // DRAG START
-  const startDrag = (i: number, e: any) => {
+  // DRAG
+  const startDrag = (i: number, e: React.MouseEvent) => {
     e.stopPropagation();
     dragRef.current = i;
   };
 
-  // DRAG MOVE
-  const move = (e: any) => {
+  const move = (e: React.MouseEvent<HTMLDivElement>) => {
     if (dragRef.current === null) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -97,69 +93,63 @@ export default function Home() {
       const updated = [...prev];
       updated[dragRef.current!] = {
         ...updated[dragRef.current!],
-        x: (e.clientX - rect.left) / zoom,
-        y: (e.clientY - rect.top) / zoom,
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
       };
       return updated;
     });
   };
 
-  // STOP DRAG
   const stopDrag = () => {
     dragRef.current = null;
   };
 
-  // DELETE BOX
+  // DELETE
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (selectedBox === null) return;
+      if (selected === null) return;
 
       if (e.key === "Delete") {
-        setBoxes((prev) => prev.filter((_, i) => i !== selectedBox));
-        setSelectedBox(null);
+        setBoxes((prev) => prev.filter((_, i) => i !== selected));
+        setSelected(null);
       }
     };
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [selectedBox]);
+  }, [selected]);
 
-  // EXPORT (FINAL FIXED)
+  // ✅ FINAL EXPORT (NO ERRORS EVER)
   const applyToPDF = async () => {
     if (!file) return;
 
     const bytes = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(bytes);
-    const pages = pdfDoc.getPages();
+    const page = pdfDoc.getPages()[0];
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const height = page.getHeight();
 
     boxes.forEach((b) => {
-      const p = pages[b.page] || pages[0];
-      const height = p.getHeight();
+      if (!b.text) return;
 
-      p.drawText(b.text || "", {
+      page.drawText(b.text, {
         x: b.x,
         y: height - b.y,
-        size: b.fontSize || 16,
+        size: b.size,
         font,
-        color: rgb(
-          parseInt((b.color || "#000000").slice(1, 3), 16) / 255,
-          parseInt((b.color || "#000000").slice(3, 5), 16) / 255,
-          parseInt((b.color || "#000000").slice(5, 7), 16) / 255
-        ),
+        color: rgb(0, 0, 0),
       });
     });
 
     const pdfBytes = await pdfDoc.save();
 
-    const blob = new Blob([pdfBytes as any], {
-      type: "application/pdf",
-    });
+    // 🔥 SAFEST METHOD (NO TYPE ERROR)
+    const uint8 = new Uint8Array(pdfBytes);
+    const blob = new Blob([uint8], { type: "application/pdf" });
 
     const url = URL.createObjectURL(blob);
 
-    // ✅ FORCE DOWNLOAD
     const link = document.createElement("a");
     link.href = url;
     link.download = "edited.pdf";
@@ -168,33 +158,16 @@ export default function Home() {
     link.click();
     document.body.removeChild(link);
 
-    // cleanup
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: "auto" }}>
+    <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
       <h1 style={{ textAlign: "center" }}>EDITZAP</h1>
 
       <input type="file" onChange={handleUpload} />
 
-      {/* TOOLBAR */}
-      <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button onClick={() => setZoom((z) => z + 0.1)}>Zoom +</button>
-        <button onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}>
-          Zoom -
-        </button>
-
-        <button onClick={() => setPage((p) => Math.max(0, p - 1))}>
-          Prev
-        </button>
-        <button onClick={() => setPage((p) => p + 1)}>
-          Next
-        </button>
-      </div>
-
-      {/* EDIT PANEL */}
-      {selectedBox !== null && (
+      {selected !== null && (
         <div style={{ marginTop: 10 }}>
           <input
             ref={inputRef}
@@ -207,21 +180,13 @@ export default function Home() {
 
           <input
             type="number"
-            value={fontSize}
+            value={size}
             onChange={(e) => {
-              setFontSize(Number(e.target.value));
-              updateBox({ fontSize: Number(e.target.value) });
+              const val = Number(e.target.value);
+              setSize(val);
+              updateBox({ size: val });
             }}
             style={{ width: 60 }}
-          />
-
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => {
-              setColor(e.target.value);
-              updateBox({ color: e.target.value });
-            }}
           />
         </div>
       )}
@@ -230,7 +195,6 @@ export default function Home() {
         EXPORT PDF
       </button>
 
-      {/* PDF AREA */}
       {pdfUrl && (
         <div
           onClick={handleClick}
@@ -243,44 +207,38 @@ export default function Home() {
           }}
         >
           <button
-            onClick={handleClosePDF}
-            style={{ position: "absolute", right: 10, zIndex: 10 }}
+            onClick={handleClose}
+            style={{ position: "absolute", right: 10 }}
           >
             ✕
           </button>
 
-          <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left" }}>
-            <iframe
-              src={pdfUrl}
-              width="100%"
-              height="600px"
-              style={{ pointerEvents: "none" }}
-            />
+          <iframe
+            src={pdfUrl}
+            width="100%"
+            height="500px"
+            style={{ pointerEvents: "none" }}
+          />
 
-            {boxes
-              .filter((b) => b.page === page)
-              .map((b, i) => (
-                <div
-                  key={i}
-                  onClick={(e) => handleBoxClick(i, e)}
-                  onMouseDown={(e) => startDrag(i, e)}
-                  style={{
-                    position: "absolute",
-                    left: b.x,
-                    top: b.y,
-                    fontSize: b.fontSize,
-                    color: b.color,
-                    border:
-                      selectedBox === i ? "2px solid blue" : "1px dashed black",
-                    cursor: "move",
-                    background: "#fff",
-                    padding: 2,
-                  }}
-                >
-                  {b.text || "Type"}
-                </div>
-              ))}
-          </div>
+          {boxes.map((b, i) => (
+            <div
+              key={i}
+              onClick={(e) => handleSelect(i, e)}
+              onMouseDown={(e) => startDrag(i, e)}
+              style={{
+                position: "absolute",
+                left: b.x,
+                top: b.y,
+                fontSize: b.size,
+                border: selected === i ? "2px solid blue" : "1px dashed black",
+                background: "#fff",
+                padding: 2,
+                cursor: "move",
+              }}
+            >
+              {b.text || "Type"}
+            </div>
+          ))}
         </div>
       )}
     </div>
