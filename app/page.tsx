@@ -73,9 +73,12 @@ export default function Home() {
   // UPDATE BOX
   const updateBox = (changes: any) => {
     if (selectedBox === null) return;
-    const updated = [...boxes];
-    updated[selectedBox] = { ...updated[selectedBox], ...changes };
-    setBoxes(updated);
+
+    setBoxes((prev) => {
+      const updated = [...prev];
+      updated[selectedBox] = { ...updated[selectedBox], ...changes };
+      return updated;
+    });
   };
 
   // DRAG START
@@ -84,7 +87,7 @@ export default function Home() {
     dragRef.current = i;
   };
 
-  // DRAG MOVE (SMOOTH)
+  // DRAG MOVE
   const move = (e: any) => {
     if (dragRef.current === null) return;
 
@@ -121,7 +124,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selectedBox]);
 
-  // EXPORT
+  // EXPORT (FINAL FIX)
   const applyToPDF = async () => {
     if (!file) return;
 
@@ -135,15 +138,15 @@ export default function Home() {
       const p = pages[b.page] || pages[0];
       const height = p.getHeight();
 
-      p.drawText(b.text, {
+      p.drawText(b.text || "", {
         x: b.x,
         y: height - b.y,
-        size: b.fontSize,
+        size: b.fontSize || 16,
         font,
         color: rgb(
-          parseInt(b.color.slice(1, 3), 16) / 255,
-          parseInt(b.color.slice(3, 5), 16) / 255,
-          parseInt(b.color.slice(5, 7), 16) / 255
+          parseInt((b.color || "#000000").slice(1, 3), 16) / 255,
+          parseInt((b.color || "#000000").slice(3, 5), 16) / 255,
+          parseInt((b.color || "#000000").slice(5, 7), 16) / 255
         ),
       });
     });
@@ -156,16 +159,20 @@ export default function Home() {
 
     const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "edited.pdf";
-    a.click();
+    // ✅ GUARANTEED DOWNLOAD
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "edited.pdf";
 
-    setPdfUrl(url);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div style={{ padding: 16, fontFamily: "Arial", maxWidth: 900, margin: "auto" }}>
+    <div style={{ padding: 16, maxWidth: 900, margin: "auto" }}>
       <h1 style={{ textAlign: "center" }}>EDITZAP</h1>
 
       <input type="file" onChange={handleUpload} />
@@ -232,7 +239,6 @@ export default function Home() {
             position: "relative",
             marginTop: 20,
             border: "2px solid black",
-            overflow: "auto",
           }}
         >
           <button
