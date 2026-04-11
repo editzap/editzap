@@ -29,7 +29,7 @@ export default function Home() {
     setBoxes([]);
   };
 
-  // DRAG START (ONLY EMPTY AREA)
+  // DRAG START
   const handleMouseDown = (e: any) => {
     if (e.target !== e.currentTarget) return;
 
@@ -85,7 +85,7 @@ export default function Home() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  // LIVE TEXT EDIT
+  // TEXT EDIT
   const handleTextChange = (value: string) => {
     setText(value);
 
@@ -98,7 +98,7 @@ export default function Home() {
     setBoxes(updated);
   };
 
-  // DELETE EMPTY BOX USING KEYBOARD
+  // DELETE EMPTY BOX
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (selectedBox === null) return;
@@ -170,6 +170,19 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ADSENSE LINKS */}
+      <div style={{ textAlign: "center", marginTop: "10px" }}>
+        <a href="/privacy" style={{ marginRight: "15px", color: "#000", fontWeight: "600" }}>
+          Privacy
+        </a>
+        <a href="/about" style={{ marginRight: "15px", color: "#000", fontWeight: "600" }}>
+          About
+        </a>
+        <a href="/contact" style={{ color: "#000", fontWeight: "600" }}>
+          Contact
+        </a>
+      </div>
+
       {/* MAIN */}
       <div style={{ maxWidth: "800px", margin: "40px auto" }}>
         <div style={card}>
@@ -193,7 +206,7 @@ export default function Home() {
                     type="number"
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
-                    style={{ width: "60px" }}
+                    style={{ width: "60px", marginLeft: "10px" }}
                   />
                 </div>
               )}
@@ -265,20 +278,20 @@ export default function Home() {
 }
 
 // STYLES
-const header = {
+const header: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   padding: "20px 30px",
   background: "#fff",
 };
 
-const logo = {
+const logo: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "10px",
 };
 
-const logoIcon = {
+const logoIcon: React.CSSProperties = {
   width: "36px",
   height: "36px",
   background: "#000",
@@ -289,21 +302,22 @@ const logoIcon = {
   borderRadius: "8px",
 };
 
-const card = {
+const card: React.CSSProperties = {
   background: "#fff",
   padding: "25px",
   borderRadius: "14px",
 };
 
-const btn = {
+const btn: React.CSSProperties = {
   padding: "10px 16px",
   background: "#000",
   color: "#fff",
   border: "none",
   borderRadius: "8px",
+  marginTop: "10px",
 };
 
-const tabBtn = (active: boolean) => ({
+const tabBtn = (active: boolean): React.CSSProperties => ({
   padding: "8px 14px",
   borderRadius: "8px",
   border: "none",
