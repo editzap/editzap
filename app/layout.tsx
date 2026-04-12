@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "EditZap",
-  description: "Free online PDF editor",
+  title: "EditZap - Free PDF Editor",
+  description: "Edit PDF online for free. Add text, modify and download instantly.",
 };
 
 export default function RootLayout({
@@ -10,6 +10,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      
+      <head>
+        {/* 🔴 PASTE YOUR GOOGLE CODE BELOW */}
+        <meta
+          name="google-site-verification"
+          content="VlskugI9oL7iR415GO-_cqk_HqfxZSzu4BklP4eWymY"
+        />
+      </head>
+
       <body style={{ margin: 0, fontFamily: "Arial" }}>
         
         {/* NAVBAR */}
@@ -31,7 +40,7 @@ export default function RootLayout({
           </div>
         </div>
 
-        {/* CONTENT */}
+        {/* MAIN CONTENT */}
         <div>{children}</div>
 
         {/* FOOTER */}
@@ -43,7 +52,7 @@ export default function RootLayout({
             borderTop: "1px solid #ddd",
           }}
         >
-          © 2026 EditZap
+          © 2026 EditZap — All rights reserved
         </div>
 
       </body>
