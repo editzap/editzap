@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { motion } from "framer-motion";
 
 type Tab = "edit" | "merge" | "split";
 
@@ -79,83 +80,119 @@ export default function Editor() {
   };
 
   return (
-    <div style={container}>
+    <motion.div
+      style={container}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
       {/* HERO */}
-      <div style={hero}>
+      <motion.div
+        style={hero}
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
         <h1 style={title}>Editor</h1>
         <p style={subtitle}>Modify your PDFs with ease</p>
-      </div>
+      </motion.div>
 
       {/* TABS */}
       <div style={tabsWrapper}>
         <div style={tabs}>
           {(["edit", "merge", "split"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                ...tabBtn,
-                ...(tab === t ? activeTab : {}),
-              }}
-            >
-              {t.toUpperCase()}
+            <button key={t} onClick={() => setTab(t)} style={tabBtn}>
+              {tab === t && (
+                <motion.div
+                  layoutId="editor-pill"
+                  style={activePill}
+                  transition={{ type: "spring", stiffness: 300 }}
+                />
+              )}
+              <span style={tabText(tab === t)}>{t.toUpperCase()}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* CARD */}
-      <div style={card}>
+      <motion.div
+        key={tab}
+        style={card}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         {tab === "edit" && (
           <>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) =>
-                e.target.files?.[0] &&
-                e.target.files[0].arrayBuffer().then(setPdfBytes)
-              }
-            />
+            <label style={upload}>
+              Upload PDF
+              <input
+                type="file"
+                accept=".pdf"
+                hidden
+                onChange={(e) =>
+                  e.target.files?.[0] &&
+                  e.target.files[0].arrayBuffer().then(setPdfBytes)
+                }
+              />
+            </label>
+
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Enter text"
               style={input}
             />
-            <button onClick={exportPDF} style={primaryBtn}>
+
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={exportPDF}
+              style={primaryBtn}
+            >
               Export PDF
-            </button>
+            </motion.button>
           </>
         )}
 
         {tab === "merge" && (
-          <input
-            type="file"
-            multiple
-            accept=".pdf"
-            onChange={(e) =>
-              mergePDFs(Array.from(e.target.files || []))
-            }
-          />
+          <label style={upload}>
+            Upload PDFs
+            <input
+              type="file"
+              multiple
+              accept=".pdf"
+              hidden
+              onChange={(e) =>
+                mergePDFs(Array.from(e.target.files || []))
+              }
+            />
+          </label>
         )}
 
         {tab === "split" && (
           <>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) =>
-                e.target.files?.[0] &&
-                e.target.files[0].arrayBuffer().then(setPdfBytes)
-              }
-            />
-            <button onClick={splitPDF} style={primaryBtn}>
+            <label style={upload}>
+              Upload PDF
+              <input
+                type="file"
+                accept=".pdf"
+                hidden
+                onChange={(e) =>
+                  e.target.files?.[0] &&
+                  e.target.files[0].arrayBuffer().then(setPdfBytes)
+                }
+              />
+            </label>
+
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={splitPDF}
+              style={primaryBtn}
+            >
               Split PDF
-            </button>
+            </motion.button>
           </>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -197,17 +234,25 @@ const tabs: React.CSSProperties = {
 };
 
 const tabBtn: React.CSSProperties = {
+  position: "relative",
   padding: "8px 18px",
-  borderRadius: 999,
   border: "none",
   background: "transparent",
   cursor: "pointer",
 };
 
-const activeTab: React.CSSProperties = {
+const activePill: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  borderRadius: 999,
   background: "#111",
-  color: "#fff",
 };
+
+const tabText = (active: boolean): React.CSSProperties => ({
+  position: "relative",
+  zIndex: 1,
+  color: active ? "#fff" : "#333",
+});
 
 /* CARD */
 const card: React.CSSProperties = {
@@ -217,6 +262,14 @@ const card: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: 12,
+};
+
+const upload: React.CSSProperties = {
+  padding: "12px",
+  border: "2px dashed #ccc",
+  borderRadius: 10,
+  textAlign: "center",
+  cursor: "pointer",
 };
 
 const input: React.CSSProperties = {
