@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 type Box = {
@@ -18,12 +18,43 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [boxes, setBoxes] = useState<Box[]>([]);
+  const [history, setHistory] = useState<Box[][]>([]);
   const [selected, setSelected] = useState<number | null>(null);
 
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
   const [splitFile, setSplitFile] = useState<File | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<number | null>(null);
+
+  // ===== HISTORY =====
+  const saveHistory = (newBoxes: Box[]) => {
+    setHistory((prev) => [...prev, boxes]);
+    setBoxes(newBoxes);
+  };
+
+  // ===== UNDO =====
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "z") {
+        setHistory((prev) => {
+          if (prev.length === 0) return prev;
+          const last = prev[prev.length - 1];
+          setBoxes(last);
+          return prev.slice(0, -1);
+        });
+      }
+
+      if (e.key === "Delete" && selected !== null) {
+        const updated = boxes.filter((_, i) => i !== selected);
+        saveHistory(updated);
+        setSelected(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [boxes, selected]);
 
   // ===== EDIT =====
   const handleUpload = (e: any) => {
@@ -49,19 +80,43 @@ export default function Home() {
       font: "Helvetica",
     };
 
-    setBoxes((prev) => [...prev, newBox]);
+    saveHistory([...boxes, newBox]);
+  };
+
+  // ===== DRAG =====
+  const startDrag = (i: number, e: any) => {
+    e.stopPropagation();
+    dragRef.current = i;
+  };
+
+  const move = (e: any) => {
+    if (dragRef.current === null || !containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+
+    const updated = [...boxes];
+    updated[dragRef.current] = {
+      ...updated[dragRef.current],
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+
+    setBoxes(updated);
+  };
+
+  const stopDrag = () => {
+    dragRef.current = null;
   };
 
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
-    setBoxes((prev) => {
-      const updated = [...prev];
-      updated[selected] = { ...updated[selected], ...changes };
-      return updated;
-    });
+    const updated = [...boxes];
+    updated[selected] = { ...updated[selected], ...changes };
+    saveHistory(updated);
   };
 
+  // ===== EXPORT =====
   const exportPDF = async () => {
     if (!file) return;
 
@@ -100,23 +155,21 @@ export default function Home() {
 
     const pdfBytes = await pdfDoc.save();
 
-    const blob = new Blob([new Uint8Array(pdfBytes)], {
-      type: "application/pdf",
-    });
-
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(
+      new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" })
+    );
     a.download = "edited.pdf";
     a.click();
   };
 
   // ===== MERGE =====
   const handleMergeUpload = (e: any) => {
-    setMergeFiles(Array.from(e.target.files || []) as File[]);
+    setMergeFiles(Array.from(e.target.files || []));
   };
 
   const mergePDFs = async () => {
-    if (mergeFiles.length < 2) return alert("Select at least 2 PDFs");
+    if (mergeFiles.length < 2) return alert("Select 2 PDFs");
 
     const merged = await PDFDocument.create();
 
@@ -139,9 +192,7 @@ export default function Home() {
 
   // ===== SPLIT =====
   const handleSplitUpload = (e: any) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setSplitFile(f);
+    setSplitFile(e.target.files[0]);
   };
 
   const splitPDF = async () => {
@@ -200,7 +251,6 @@ export default function Home() {
           background: "#fff",
           padding: 30,
           borderRadius: 16,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
         }}
       >
         {activeTab === "edit" && (
@@ -210,7 +260,6 @@ export default function Home() {
             <input type="file" onChange={handleUpload} />
             <br /><br />
 
-            {/* TOOLBAR */}
             {selected !== null && (
               <div style={{ marginBottom: 10 }}>
                 <input
@@ -238,15 +287,21 @@ export default function Home() {
                   <option value="Courier">Courier</option>
                   <option value="Times">Times</option>
                 </select>
+
+                <button onClick={() => updateBox({ text: "" })}>
+                  Clear
+                </button>
               </div>
             )}
 
-            <button onClick={exportPDF}>EXPORT PDF</button>
+            <button onClick={exportPDF}>EXPORT</button>
 
             {pdfUrl && (
               <div
                 ref={containerRef}
                 onClick={handleClick}
+                onMouseMove={move}
+                onMouseUp={stopDrag}
                 style={{ position: "relative", marginTop: 20 }}
               >
                 <iframe src={pdfUrl} width="100%" height="500px" />
@@ -263,12 +318,11 @@ export default function Home() {
                     onInput={(e) => {
                       const val = (e.target as HTMLDivElement).innerText;
 
-                      setBoxes((prev) => {
-                        const updated = [...prev];
-                        updated[i].text = val;
-                        return updated;
-                      });
+                      const updated = [...boxes];
+                      updated[i].text = val;
+                      setBoxes(updated);
                     }}
+                    onMouseDown={(e) => startDrag(i, e)}
                     style={{
                       position: "absolute",
                       left: b.x,
@@ -282,6 +336,7 @@ export default function Home() {
                           : "1px solid gray",
                       background: "#fff",
                       padding: 4,
+                      cursor: "move",
                     }}
                   >
                     {b.text || "Type"}
@@ -294,18 +349,16 @@ export default function Home() {
 
         {activeTab === "merge" && (
           <>
-            <h2>Merge PDFs</h2>
+            <h2>Merge</h2>
             <input type="file" multiple onChange={handleMergeUpload} />
-            <br /><br />
             <button onClick={mergePDFs}>MERGE</button>
           </>
         )}
 
         {activeTab === "split" && (
           <>
-            <h2>Split PDF</h2>
+            <h2>Split</h2>
             <input type="file" onChange={handleSplitUpload} />
-            <br /><br />
             <button onClick={splitPDF}>SPLIT</button>
           </>
         )}
