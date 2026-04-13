@@ -25,7 +25,6 @@ export default function Home() {
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
 
   const [splitFile, setSplitFile] = useState<File | null>(null);
-  const [pagesInput, setPagesInput] = useState("");
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dragRef = useRef<number | null>(null);
@@ -198,7 +197,7 @@ export default function Home() {
     a.click();
   };
 
-  // ================= SPLIT =================
+  // ================= SPLIT (FINAL FIXED) =================
 
   const handleSplitUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -207,36 +206,35 @@ export default function Home() {
   };
 
   const splitPDF = async () => {
-    if (!splitFile || !pagesInput) {
-      alert("Upload file and enter pages");
+    if (!splitFile) {
+      alert("Upload a PDF first");
       return;
     }
 
     const bytes = await splitFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(bytes);
 
-    const newPdf = await PDFDocument.create();
+    const totalPages = pdfDoc.getPageCount();
 
-    const pages = pagesInput
-      .split(",")
-      .map((p) => parseInt(p.trim()) - 1)
-      .filter((p) => !isNaN(p));
+    for (let i = 0; i < totalPages; i++) {
+      const newPdf = await PDFDocument.create();
 
-    const copied = await newPdf.copyPages(pdfDoc, pages);
-    copied.forEach((p) => newPdf.addPage(p));
+      const [page] = await newPdf.copyPages(pdfDoc, [i]);
+      newPdf.addPage(page);
 
-    const newBytes = await newPdf.save();
+      const newBytes = await newPdf.save();
 
-    const blob = new Blob([new Uint8Array(newBytes)], {
-      type: "application/pdf",
-    });
+      const blob = new Blob([new Uint8Array(newBytes)], {
+        type: "application/pdf",
+      });
 
-    const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "split.pdf";
-    a.click();
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `page-${i + 1}.pdf`;
+      a.click();
+    }
   };
 
   return (
@@ -245,7 +243,7 @@ export default function Home() {
       <h1 style={{ textAlign: "center" }}>⚡ EditZap</h1>
 
       {/* TABS */}
-      <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
         <button onClick={() => setActiveTab("edit")}>EDIT</button>
         <button onClick={() => setActiveTab("merge")}>MERGE</button>
         <button onClick={() => setActiveTab("split")}>SPLIT</button>
@@ -258,39 +256,9 @@ export default function Home() {
           <button onClick={applyToPDF}>EXPORT PDF</button>
 
           {pdfUrl && (
-            <div
-              onClick={handleClick}
-              onMouseMove={move}
-              onMouseUp={stopDrag}
-              style={{ position: "relative", marginTop: 20 }}
-            >
+            <div onClick={handleClick} style={{ marginTop: 20 }}>
               <button onClick={handleClose}>✕</button>
-
-              <iframe
-                src={pdfUrl}
-                width="100%"
-                height="500px"
-                style={{ pointerEvents: "none" }}
-              />
-
-              {boxes.map((b, i) => (
-                <div
-                  key={i}
-                  onClick={(e) => handleSelect(i, e)}
-                  onMouseDown={(e) => startDrag(i, e)}
-                  style={{
-                    position: "absolute",
-                    left: b.x,
-                    top: b.y,
-                    fontSize: b.size,
-                    border: "1px solid black",
-                    background: "#fff",
-                    padding: 2,
-                  }}
-                >
-                  {b.text || "Type"}
-                </div>
-              ))}
+              <iframe src={pdfUrl} width="100%" height="500px" />
             </div>
           )}
         </>
@@ -298,7 +266,7 @@ export default function Home() {
 
       {/* MERGE */}
       {activeTab === "merge" && (
-        <div>
+        <div style={{ textAlign: "center" }}>
           <h2>Merge PDFs</h2>
           <input type="file" multiple onChange={handleMergeUpload} />
           <p>{mergeFiles.length} files selected</p>
@@ -308,15 +276,20 @@ export default function Home() {
 
       {/* SPLIT */}
       {activeTab === "split" && (
-        <div>
-          <h2>Split PDF</h2>
-          <input type="file" onChange={handleSplitUpload} />
+        <div style={{ textAlign: "center" }}>
+          <h2>Split PDF (Each page as separate file)</h2>
+
           <input
-            placeholder="Enter pages (1,2,3)"
-            value={pagesInput}
-            onChange={(e) => setPagesInput(e.target.value)}
+            type="file"
+            accept="application/pdf"
+            onChange={handleSplitUpload}
           />
-          <button onClick={splitPDF}>Split & Download</button>
+
+          <br /><br />
+
+          <button onClick={splitPDF}>
+            Split & Download
+          </button>
         </div>
       )}
     </div>
