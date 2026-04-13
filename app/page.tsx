@@ -11,7 +11,6 @@ type Box = {
   text: string;
   size: number;
   color: string;
-  bold: boolean;
 };
 
 export default function Editor() {
@@ -61,7 +60,6 @@ export default function Editor() {
       text: "",
       size: 16,
       color: "#000000",
-      bold: false,
     });
 
     setDrawing(true);
@@ -92,16 +90,6 @@ export default function Editor() {
 
     setDrawing(false);
     setCurrentBox(null);
-  };
-
-  const updateBox = (changes: Partial<Box>) => {
-    if (selected === null) return;
-
-    setBoxes((prev) => {
-      const updated = [...prev];
-      updated[selected] = { ...updated[selected], ...changes };
-      return updated;
-    });
   };
 
   const deleteBox = (i: number) => {
@@ -148,6 +136,8 @@ export default function Editor() {
   // ================= MERGE =================
 
   const mergePDFs = async () => {
+    if (mergeFiles.length === 0) return alert("Upload files first");
+
     const merged = await PDFDocument.create();
 
     for (const f of mergeFiles) {
@@ -170,7 +160,7 @@ export default function Editor() {
   // ================= SPLIT =================
 
   const splitPDF = async () => {
-    if (!splitFile) return;
+    if (!splitFile) return alert("Upload file first");
 
     const bytes = await splitFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(bytes);
@@ -224,25 +214,6 @@ export default function Editor() {
             <input type="file" onChange={handleUpload} />
             <button onClick={exportPDF}>Export</button>
 
-            {selected !== null && (
-              <div>
-                <input
-                  type="number"
-                  value={boxes[selected].size}
-                  onChange={(e) =>
-                    updateBox({ size: parseInt(e.target.value) })
-                  }
-                />
-                <input
-                  type="color"
-                  value={boxes[selected].color}
-                  onChange={(e) =>
-                    updateBox({ color: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
             {pdfUrl && (
               <div
                 ref={containerRef}
@@ -254,16 +225,14 @@ export default function Editor() {
                 <iframe src={pdfUrl} width="100%" height="600px" />
 
                 {currentBox && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: currentBox.x,
-                      top: currentBox.y,
-                      width: currentBox.width,
-                      height: currentBox.height,
-                      border: "2px dashed black",
-                    }}
-                  />
+                  <div style={{
+                    position: "absolute",
+                    left: currentBox.x,
+                    top: currentBox.y,
+                    width: currentBox.width,
+                    height: currentBox.height,
+                    border: "2px dashed black",
+                  }} />
                 )}
 
                 {boxes.map((b, i) => (
@@ -294,11 +263,7 @@ export default function Editor() {
                           return updated;
                         });
                       }}
-                      style={{
-                        padding: 4,
-                        fontSize: b.size,
-                        color: b.color,
-                      }}
+                      style={{ padding: 4 }}
                     >
                       {b.text || "Type"}
                     </div>
@@ -314,16 +279,31 @@ export default function Editor() {
         {/* MERGE */}
         {tab === "merge" && (
           <>
-            <input type="file" multiple onChange={(e) => setMergeFiles(Array.from(e.target.files || []))} />
-            <button onClick={mergePDFs}>Merge PDFs</button>
+            <h3>Merge PDFs</h3>
+            <input
+              type="file"
+              multiple
+              onChange={(e) =>
+                setMergeFiles(Array.from(e.target.files || []))
+              }
+            />
+            <br /><br />
+            <button onClick={mergePDFs}>Merge & Download</button>
           </>
         )}
 
         {/* SPLIT */}
         {tab === "split" && (
           <>
-            <input type="file" onChange={(e) => setSplitFile(e.target.files?.[0] || null)} />
-            <button onClick={splitPDF}>Split PDF</button>
+            <h3>Split PDF</h3>
+            <input
+              type="file"
+              onChange={(e) =>
+                setSplitFile(e.target.files?.[0] || null)
+              }
+            />
+            <br /><br />
+            <button onClick={splitPDF}>Split & Download</button>
           </>
         )}
       </div>
