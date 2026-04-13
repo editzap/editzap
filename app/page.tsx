@@ -36,6 +36,7 @@ export default function Home() {
     <div style={container}>
       <h1>⚡ EditZap</h1>
 
+      {/* Tabs */}
       <div style={tabs}>
         {(["edit", "merge", "split"] as Tab[]).map((t) => (
           <button
@@ -48,7 +49,9 @@ export default function Home() {
         ))}
       </div>
 
-      <div style={card}
+      {/* Upload Card */}
+      <div
+        style={card}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
@@ -56,7 +59,12 @@ export default function Home() {
 
         <label style={btn}>
           Upload PDF
-          <input type="file" accept=".pdf" hidden onChange={handleSelect} />
+          <input
+            type="file"
+            accept=".pdf"
+            hidden
+            onChange={handleSelect}
+          />
         </label>
 
         <p style={{ marginTop: 10 }}>Drag & drop PDF here</p>
@@ -65,6 +73,7 @@ export default function Home() {
   );
 }
 
+// ── STYLES ──
 const container: React.CSSProperties = {
   padding: 40,
   textAlign: "center",

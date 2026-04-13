@@ -3,26 +3,26 @@
 import React, { useState, useEffect } from "react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-type Tool = "edit" | "merge" | "split";
+type Tab = "edit" | "merge" | "split";
 
-export default function Page() {
-  const [tool, setTool] = useState<Tool>("edit");
+export default function Editor() {
+  const [tab, setTab] = useState<Tab>("edit");
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [text, setText] = useState("");
 
-  // safe buffer conversion
+  // Safe buffer conversion
   const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
     const ab = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(ab).set(bytes);
     return ab;
   };
 
-  // load from homepage
+  // Load from homepage
   useEffect(() => {
     const stored = sessionStorage.getItem("pdfFile");
-    const storedTool = sessionStorage.getItem("tool") as Tool | null;
+    const tool = sessionStorage.getItem("tool") as Tab | null;
 
-    if (storedTool) setTool(storedTool);
+    if (tool) setTab(tool);
 
     if (stored) {
       fetch(stored)
@@ -31,7 +31,7 @@ export default function Page() {
     }
   }, []);
 
-  // ───────── EDIT ─────────
+  // ── EDIT ──
   const exportPDF = async () => {
     if (!pdfBytes) {
       alert("Upload a PDF first");
@@ -55,19 +55,17 @@ export default function Page() {
     download(bytes, "edited.pdf");
   };
 
-  // ───────── MERGE ─────────
+  // ── MERGE ──
   const mergePDFs = async (files: File[]) => {
     if (files.length < 2) {
-      alert("Select at least 2 PDFs to merge");
+      alert("Select at least 2 PDFs");
       return;
     }
 
     const merged = await PDFDocument.create();
 
     for (const file of files) {
-      const bytes = await file.arrayBuffer();
-      const pdf = await PDFDocument.load(bytes);
-
+      const pdf = await PDFDocument.load(await file.arrayBuffer());
       const pages = await merged.copyPages(pdf, pdf.getPageIndices());
       pages.forEach((p) => merged.addPage(p));
     }
@@ -76,7 +74,7 @@ export default function Page() {
     download(result, "merged.pdf");
   };
 
-  // ───────── SPLIT ─────────
+  // ── SPLIT ──
   const splitPDF = async () => {
     if (!pdfBytes) {
       alert("No PDF loaded");
@@ -95,7 +93,7 @@ export default function Page() {
     }
   };
 
-  // ───────── DOWNLOAD ─────────
+  // ── DOWNLOAD ──
   const download = (bytes: Uint8Array, name: string) => {
     const buffer = toArrayBuffer(bytes);
     const url = URL.createObjectURL(new Blob([buffer]));
@@ -108,46 +106,85 @@ export default function Page() {
     URL.revokeObjectURL(url);
   };
 
-  // ───────── UI ─────────
   return (
-    <div style={{ padding: 20 }}>
-      <h2>{tool.toUpperCase()} TOOL</h2>
+    <div style={container}>
+      <h1>⚡ EditZap</h1>
 
-      {/* EDIT */}
-      {tool === "edit" && (
-        <>
-          <input
-            placeholder="Enter text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <br />
-          <button onClick={exportPDF}>Export PDF</button>
-        </>
-      )}
+      {/* Tabs */}
+      <div style={tabs}>
+        {(["edit", "merge", "split"] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            style={tab === t ? activeTab : tabBtn}
+          >
+            {t.toUpperCase()}
+          </button>
+        ))}
+      </div>
 
-      {/* MERGE */}
-      {tool === "merge" && (
-        <>
-          <p>Select multiple PDFs:</p>
-          <input
-            type="file"
-            multiple
-            accept=".pdf"
-            onChange={(e) =>
-              mergePDFs(Array.from(e.target.files || []))
-            }
-          />
-        </>
-      )}
+      {/* Content */}
+      <div style={card}>
+        {tab === "edit" && (
+          <>
+            <input
+              placeholder="Enter text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+            <br />
+            <button onClick={exportPDF}>Export PDF</button>
+          </>
+        )}
 
-      {/* SPLIT */}
-      {tool === "split" && (
-        <>
-          <p>Split current PDF into pages:</p>
+        {tab === "merge" && (
+          <>
+            <p>Select multiple PDFs:</p>
+            <input
+              type="file"
+              multiple
+              accept=".pdf"
+              onChange={(e) =>
+                mergePDFs(Array.from(e.target.files || []))
+              }
+            />
+          </>
+        )}
+
+        {tab === "split" && (
           <button onClick={splitPDF}>Split PDF</button>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
+
+// ── STYLES ──
+const container: React.CSSProperties = {
+  padding: 40,
+  textAlign: "center",
+};
+
+const tabs: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  gap: 10,
+  margin: 20,
+};
+
+const tabBtn: React.CSSProperties = {
+  padding: "8px 16px",
+  cursor: "pointer",
+};
+
+const activeTab: React.CSSProperties = {
+  ...tabBtn,
+  background: "#111",
+  color: "#fff",
+};
+
+const card: React.CSSProperties = {
+  padding: 30,
+  border: "1px solid #ccc",
+  borderRadius: 10,
+};
