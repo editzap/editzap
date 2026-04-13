@@ -1,8 +1,6 @@
-import Script from "next/script";
-
 export const metadata = {
   title: "EditZap - Free PDF Editor",
-  description: "Edit, merge and split PDFs online for free.",
+  description: "Edit PDF online for free. Add text, merge, split instantly.",
 };
 
 export default function RootLayout({
@@ -13,22 +11,24 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        
+        {/* GOOGLE VERIFICATION */}
         <meta
           name="google-site-verification"
           content="VlskugI9oL7iR415GO-_cqk_HqfxZSzu4BklP4eWymY"
         />
+
+        {/* ✅ ADSENSE CODE (VERY IMPORTANT) */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4445312802335744"
+          crossOrigin="anonymous"
+        ></script>
+
       </head>
 
       <body style={{ margin: 0, fontFamily: "Arial" }}>
         
-        {/* ADSENSE */}
-        <Script
-          async
-          strategy="afterInteractive"
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4445312802335744"
-          crossOrigin="anonymous"
-        />
-
         {/* NAVBAR */}
         <div
           style={{
@@ -36,10 +36,9 @@ export default function RootLayout({
             justifyContent: "space-between",
             padding: 20,
             borderBottom: "1px solid #ddd",
-            fontWeight: "bold",
           }}
         >
-          <div>⚡ EditZap</div>
+          <h2>⚡ EditZap</h2>
 
           <div style={{ display: "flex", gap: 20 }}>
             <a href="/">Home</a>
@@ -49,7 +48,8 @@ export default function RootLayout({
           </div>
         </div>
 
-        <div style={{ padding: 20 }}>{children}</div>
+        {/* MAIN CONTENT */}
+        {children}
 
         {/* FOOTER */}
         <div
@@ -58,11 +58,11 @@ export default function RootLayout({
             padding: 20,
             textAlign: "center",
             borderTop: "1px solid #ddd",
-            fontSize: 14,
           }}
         >
           © 2026 EditZap — Free PDF Tools
         </div>
+
       </body>
     </html>
   );

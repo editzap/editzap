@@ -14,27 +14,7 @@ export default function Home() {
         fontFamily: "Arial",
       }}
     >
-      {/* NAVBAR (ONLY ONE) */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "20px 40px",
-          background: "#fff",
-          borderBottom: "1px solid #eee",
-        }}
-      >
-        <h2 style={{ fontWeight: "bold" }}>⚡ EditZap</h2>
-
-        <div style={{ display: "flex", gap: 20 }}>
-          <Link href="/">Home</Link>
-          <Link href="/about">About</Link>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/contact">Contact</Link>
-        </div>
-      </div>
-
-      {/* HERO (ONLY CTA) */}
+      {/* HERO ONLY */}
       <div
         style={{
           textAlign: "center",
@@ -61,7 +41,6 @@ export default function Home() {
               borderRadius: 12,
               cursor: "pointer",
               fontWeight: "bold",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
             }}
           >
             Start Editing PDF
@@ -69,7 +48,7 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* SEO / INFO */}
+      {/* SEO TEXT */}
       <div
         style={{
           maxWidth: 900,
@@ -80,28 +59,10 @@ export default function Home() {
         }}
       >
         <p>
-          EditZap is a free online PDF editor that allows you to add text,
-          merge multiple PDFs, and split documents instantly. All processing
-          happens in your browser — no uploads, no data storage.
+          EditZap is a free online PDF editor that allows you to edit PDFs,
+          merge multiple files, and split documents instantly. No upload,
+          fully secure, and fast.
         </p>
-      </div>
-
-      {/* FOOTER (ONLY ONE) */}
-      <div
-        style={{
-          textAlign: "center",
-          padding: 30,
-          borderTop: "1px solid #eee",
-          background: "#fff",
-        }}
-      >
-        <p>© 2026 EditZap — Free PDF Tools</p>
-
-        <div style={{ marginTop: 10 }}>
-          <Link href="/about">About</Link> |{" "}
-          <Link href="/privacy">Privacy</Link> |{" "}
-          <Link href="/contact">Contact</Link>
-        </div>
       </div>
     </div>
   );
