@@ -13,7 +13,7 @@ type Box = {
 export default function Editor() {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [drawing, setDrawing] = useState(false);
-  const [start, setStart] = useState<{ x: number; y: number } | null>(null);
+  const [currentBox, setCurrentBox] = useState<Box | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,46 +21,6 @@ export default function Editor() {
   // START DRAW
   const handleMouseDown = (e: any) => {
     const rect = containerRef.current!.getBoundingClientRect();
-
-    setStart({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-
-    setDrawing(true);
-  };
-
-  // DRAW BOX
-  const handleMouseMove = (e: any) => {
-    if (!drawing || !start) return;
-
-    const rect = containerRef.current!.getBoundingClientRect();
-
-    const width = e.clientX - rect.left - start.x;
-    const height = e.clientY - rect.top - start.y;
-
-    setBoxes((prev) => {
-      const updated = [...prev];
-      updated[updated.length - 1] = {
-        ...updated[updated.length - 1],
-        width,
-        height,
-      };
-      return updated;
-    });
-  };
-
-  // END DRAW
-  const handleMouseUp = () => {
-    setDrawing(false);
-    setStart(null);
-  };
-
-  // CREATE NEW BOX
-  const handleClick = (e: any) => {
-    if (!containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
 
     const newBox: Box = {
       x: e.clientX - rect.left,
@@ -70,7 +30,40 @@ export default function Editor() {
       text: "",
     };
 
-    setBoxes((prev) => [...prev, newBox]);
+    setCurrentBox(newBox);
+    setDrawing(true);
+  };
+
+  // DRAW SIZE
+  const handleMouseMove = (e: any) => {
+    if (!drawing || !currentBox) return;
+
+    const rect = containerRef.current!.getBoundingClientRect();
+
+    const width = e.clientX - rect.left - currentBox.x;
+    const height = e.clientY - rect.top - currentBox.y;
+
+    setCurrentBox({
+      ...currentBox,
+      width,
+      height,
+    });
+  };
+
+  // END DRAW → LOCK POSITION
+  const handleMouseUp = () => {
+    if (currentBox) {
+      setBoxes((prev) => [...prev, currentBox]);
+    }
+
+    setCurrentBox(null);
+    setDrawing(false);
+  };
+
+  // DELETE BOX
+  const deleteBox = (i: number) => {
+    setBoxes((prev) => prev.filter((_, index) => index !== i));
+    setSelected(null);
   };
 
   return (
@@ -82,19 +75,33 @@ export default function Editor() {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onClick={handleClick}
         style={{
           width: "100%",
           height: 600,
           border: "2px solid black",
           position: "relative",
+          background: "#fafafa",
         }}
       >
+        {/* DRAWING BOX */}
+        {currentBox && (
+          <div
+            style={{
+              position: "absolute",
+              left: currentBox.x,
+              top: currentBox.y,
+              width: currentBox.width,
+              height: currentBox.height,
+              border: "2px dashed black",
+              background: "rgba(0,0,0,0.05)",
+            }}
+          />
+        )}
+
+        {/* FINAL BOXES */}
         {boxes.map((b, i) => (
           <div
             key={i}
-            contentEditable
-            suppressContentEditableWarning
             onClick={(e) => {
               e.stopPropagation();
               setSelected(i);
@@ -106,13 +113,62 @@ export default function Editor() {
               width: b.width,
               height: b.height,
               border:
-                selected === i ? "2px solid black" : "1px solid gray",
+                selected === i
+                  ? "2px solid black"
+                  : "1px solid gray",
               background: "#fff",
               overflow: "hidden",
-              padding: 4,
             }}
           >
-            {b.text || "Type"}
+            {/* TEXT AREA */}
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              style={{
+                width: "100%",
+                height: "100%",
+                padding: 4,
+                outline: "none",
+              }}
+            >
+              {b.text || "Type"}
+            </div>
+
+            {/* DELETE BUTTON */}
+            {selected === i && (
+              <button
+                onClick={() => deleteBox(i)}
+                style={{
+                  position: "absolute",
+                  top: -10,
+                  right: -10,
+                  background: "red",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: 20,
+                  height: 20,
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            )}
+
+            {/* RESIZE HANDLE */}
+            {selected === i && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  bottom: 0,
+                  width: 10,
+                  height: 10,
+                  background: "black",
+                  cursor: "nwse-resize",
+                }}
+              />
+            )}
           </div>
         ))}
       </div>
