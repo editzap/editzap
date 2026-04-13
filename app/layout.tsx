@@ -28,18 +28,8 @@ export default function RootLayout({
         {/* PAGE CONTENT */}
         <main>{children}</main>
 
-        {/* FOOTER */}
+        {/* MINIMAL FOOTER */}
         <footer style={footer}>
-          <div style={footerInner}>
-            <div style={footerBrand}>⚡ EditZap</div>
-
-            <div style={footerLinks}>
-              <span>Home</span>
-              <span>Privacy</span>
-              <span>Contact</span>
-            </div>
-          </div>
-
           <div style={footerBottom}>
             © {new Date().getFullYear()} EditZap · Crafted for fast, private PDF editing
           </div>
@@ -110,32 +100,13 @@ const ctaBtn: React.CSSProperties = {
 /* FOOTER */
 const footer: React.CSSProperties = {
   marginTop: 80,
-  padding: "30px 24px",
+  padding: "24px 0",
   borderTop: "1px solid rgba(0,0,0,0.06)",
-};
-
-const footerInner: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 20,
-};
-
-const footerBrand: React.CSSProperties = {
-  fontWeight: 600,
-  fontSize: 14,
-};
-
-const footerLinks: React.CSSProperties = {
-  display: "flex",
-  gap: 18,
-  fontSize: 13,
-  color: "#555",
-  cursor: "pointer",
+  textAlign: "center",
 };
 
 const footerBottom: React.CSSProperties = {
-  textAlign: "center",
   fontSize: 12,
   color: "#888",
+  letterSpacing: 0.3,
 };
