@@ -1,17 +1,88 @@
 "use client";
 
-import { useState } from "react";
-import { PDFDocument } from "pdf-lib";
+import { useState, useRef } from "react";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+
+type Box = {
+  x: number;
+  y: number;
+  text: string;
+};
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"edit" | "merge" | "split">("edit");
+
+  const [file, setFile] = useState<File | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [boxes, setBoxes] = useState<Box[]>([]);
+
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
   const [splitFile, setSplitFile] = useState<File | null>(null);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // ===== EDIT =====
+  const handleUpload = (e: any) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+
+    setFile(f);
+    setPdfUrl(URL.createObjectURL(f));
+    setBoxes([]);
+  };
+
+  const handleClick = (e: any) => {
+    if (!containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+
+    const newBox: Box = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      text: "",
+    };
+
+    setBoxes((prev) => [...prev, newBox]);
+  };
+
+  const exportPDF = async () => {
+    if (!file) return;
+
+    const bytes = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(bytes);
+    const page = pdfDoc.getPages()[0];
+    const height = page.getHeight();
+
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    boxes.forEach((b) => {
+      if (!b.text) return;
+
+      page.drawText(b.text, {
+        x: b.x,
+        y: height - b.y,
+        size: 16,
+        font,
+        color: rgb(0, 0, 0),
+      });
+    });
+
+    const pdfBytes = await pdfDoc.save();
+
+    const blob = new Blob([new Uint8Array(pdfBytes)], {
+      type: "application/pdf",
+    });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "edited.pdf";
+    a.click();
+  };
+
   // ===== MERGE =====
-  const handleMergeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    setMergeFiles(Array.from(e.target.files));
+  const handleMergeUpload = (e: any) => {
+    const files = Array.from(e.target.files || []) as File[];
+    setMergeFiles(files);
   };
 
   const mergePDFs = async () => {
@@ -20,16 +91,17 @@ export default function Home() {
       return;
     }
 
-    const mergedPdf = await PDFDocument.create();
+    const merged = await PDFDocument.create();
 
     for (const file of mergeFiles) {
       const bytes = await file.arrayBuffer();
       const pdf = await PDFDocument.load(bytes);
-      const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-      pages.forEach((p) => mergedPdf.addPage(p));
+
+      const pages = await merged.copyPages(pdf, pdf.getPageIndices());
+      pages.forEach((p) => merged.addPage(p));
     }
 
-    const pdfBytes = await mergedPdf.save();
+    const pdfBytes = await merged.save();
 
     const blob = new Blob([new Uint8Array(pdfBytes)], {
       type: "application/pdf",
@@ -42,31 +114,26 @@ export default function Home() {
   };
 
   // ===== SPLIT =====
-  const handleSplitUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSplitUpload = (e: any) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setSplitFile(f);
   };
 
   const splitPDF = async () => {
-    if (!splitFile) {
-      alert("Upload a PDF first");
-      return;
-    }
+    if (!splitFile) return;
 
     const bytes = await splitFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(bytes);
 
-    const total = pdfDoc.getPageCount();
-
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < pdfDoc.getPageCount(); i++) {
       const newPdf = await PDFDocument.create();
       const [page] = await newPdf.copyPages(pdfDoc, [i]);
       newPdf.addPage(page);
 
-      const newBytes = await newPdf.save();
+      const pdfBytes = await newPdf.save();
 
-      const blob = new Blob([new Uint8Array(newBytes)], {
+      const blob = new Blob([new Uint8Array(pdfBytes)], {
         type: "application/pdf",
       });
 
@@ -78,38 +145,28 @@ export default function Home() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", padding: 30 }}>
+    <div style={{ padding: 30, background: "#f5f5f5", minHeight: "100vh" }}>
       
-      {/* LOGO */}
-      <h1 style={{ textAlign: "center", fontWeight: "bold" }}>
-        ⚡ EditZap
-      </h1>
-
-      {/* HERO LINE */}
-      <p style={{ textAlign: "center", color: "#666" }}>
-        Fast, secure and free PDF tools
-      </p>
+      {/* HEADER */}
+      <div style={{ textAlign: "center" }}>
+        <h1>⚡ EditZap</h1>
+        <p>Fast, secure and free PDF tools</p>
+      </div>
 
       {/* TABS */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 12,
-          marginTop: 20,
-        }}
-      >
+      <div style={{ textAlign: "center", marginTop: 20 }}>
         {["edit", "merge", "split"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
             style={{
-              padding: "10px 18px",
+              margin: 5,
+              padding: "10px 20px",
               fontWeight: "bold",
               borderRadius: 8,
-              border: "none",
-              background: activeTab === tab ? "#000" : "#ddd",
+              background: activeTab === tab ? "black" : "#ddd",
               color: activeTab === tab ? "#fff" : "#000",
+              border: "none",
               cursor: "pointer",
             }}
           >
@@ -118,104 +175,87 @@ export default function Home() {
         ))}
       </div>
 
-      {/* MAIN CARD */}
-      <div
-        style={{
-          maxWidth: 700,
-          margin: "40px auto",
-          background: "#fff",
-          padding: 30,
-          borderRadius: 12,
-          boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
-          textAlign: "center",
-        }}
-      >
-        {/* EDIT */}
-        {activeTab === "edit" && (
-          <>
-            <h2>Edit PDF</h2>
-            <p>Editing feature already implemented above 👆</p>
-          </>
-        )}
+      {/* EDIT */}
+      {activeTab === "edit" && (
+        <div
+          style={{
+            background: "#fff",
+            padding: 20,
+            borderRadius: 12,
+            marginTop: 30,
+          }}
+        >
+          <h2>Edit PDF</h2>
 
-        {/* MERGE */}
-        {activeTab === "merge" && (
-          <>
-            <h2>Merge PDFs</h2>
+          <input type="file" onChange={handleUpload} />
+          <br /><br />
+          <button onClick={exportPDF}>EXPORT PDF</button>
 
-            <input type="file" multiple onChange={handleMergeUpload} />
-
-            <p>{mergeFiles.length} file(s) selected</p>
-
-            <button
-              onClick={mergePDFs}
+          {pdfUrl && (
+            <div
+              ref={containerRef}
+              onClick={handleClick}
               style={{
-                padding: "12px 20px",
-                background: "#000",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: "bold",
-                cursor: "pointer",
+                marginTop: 20,
+                position: "relative",
+                border: "2px solid black",
               }}
             >
-              MERGE & DOWNLOAD
-            </button>
-          </>
-        )}
+              <iframe src={pdfUrl} width="100%" height="500px" />
 
-        {/* SPLIT */}
-        {activeTab === "split" && (
-          <>
-            <h2>Split PDF</h2>
+              {boxes.map((b, i) => (
+                <div
+                  key={i}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => {
+                    const val = (e.target as HTMLDivElement).innerText;
 
-            <input type="file" onChange={handleSplitUpload} />
-
-            <button
-              onClick={splitPDF}
-              style={{
-                marginTop: 10,
-                padding: "12px 20px",
-                background: "#000",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              SPLIT & DOWNLOAD
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* INFO SECTION */}
-      <div style={{ maxWidth: 700, margin: "40px auto", textAlign: "center" }}>
-        <h2>Free Online PDF Tools</h2>
-
-        <p style={{ color: "#555", marginTop: 10 }}>
-          EditZap lets you edit, merge and split PDFs instantly — no signup required.
-        </p>
-
-        <div style={{ marginTop: 20 }}>
-          <p>✔ No file upload to server</p>
-          <p>✔ 100% secure (runs in browser)</p>
-          <p>✔ Fast and free forever</p>
+                    setBoxes((prev) => {
+                      const updated = [...prev];
+                      updated[i].text = val;
+                      return updated;
+                    });
+                  }}
+                  style={{
+                    position: "absolute",
+                    left: b.x,
+                    top: b.y,
+                    background: "#fff",
+                    border: "1px solid black",
+                    padding: 4,
+                  }}
+                >
+                  {b.text || "Type"}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* 🔥 COPYRIGHT */}
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: 50,
-          paddingTop: 20,
-          borderTop: "1px solid #ddd",
-          color: "#777",
-          fontSize: 14,
-        }}
-      >
+      {/* MERGE */}
+      {activeTab === "merge" && (
+        <div style={{ marginTop: 30 }}>
+          <h2>Merge PDFs</h2>
+          <input type="file" multiple onChange={handleMergeUpload} />
+          <br /><br />
+          <button onClick={mergePDFs}>MERGE & DOWNLOAD</button>
+        </div>
+      )}
+
+      {/* SPLIT */}
+      {activeTab === "split" && (
+        <div style={{ marginTop: 30 }}>
+          <h2>Split PDF</h2>
+          <input type="file" onChange={handleSplitUpload} />
+          <br /><br />
+          <button onClick={splitPDF}>SPLIT & DOWNLOAD</button>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <div style={{ textAlign: "center", marginTop: 50 }}>
         © 2026 EditZap — Free PDF Tools
       </div>
     </div>
