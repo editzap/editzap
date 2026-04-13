@@ -2,9 +2,8 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
-import AdBlock from "@/components/AdBlock";
 
-type Tool = "text" | "highlight" | "draw" | null;
+type Tool = "text" | "draw" | null;
 
 interface Annotation {
   id: string;
@@ -24,44 +23,33 @@ export default function Page() {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [activeTool, setActiveTool] = useState<Tool>(null);
 
-  const [textValue, setTextValue] = useState("");
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number } | null>(null);
+  const [textValue, setTextValue] = useState("");
 
   const [drawing, setDrawing] = useState(false);
   const [livePath, setLivePath] = useState<{ x: number; y: number }[]>([]);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLCanvasElement | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
 
-  // ✅ SAFE ArrayBuffer converter
   const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
     const ab = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(ab).set(bytes);
     return ab;
   };
 
-  // ── LOAD PDF ─────────────────────────────
-  const loadFile = async (file: File) => {
-    const buf = await file.arrayBuffer();
-    setPdfBytes(buf);
-    setAnnotations([]);
-    setCurrentPage(1);
+  // load from homepage
+  useEffect(() => {
+    const stored = sessionStorage.getItem("pdfFile");
+    if (!stored) return;
 
-    const pdfjsLib = await import("pdfjs-dist");
-    const { getDocument, GlobalWorkerOptions } = pdfjsLib as any;
+    fetch(stored)
+      .then((res) => res.arrayBuffer())
+      .then((buf) => setPdfBytes(buf));
+  }, []);
 
-    GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-    const doc = await getDocument({ data: buf }).promise;
-    setPageCount(doc.numPages);
-
-    renderPage(doc, 1, []);
-  };
-
-  // ── RENDER ───────────────────────────────
-  const renderPage = useCallback(async (doc: any, pageNum: number, annots: Annotation[]) => {
+  // render
+  const renderPage = useCallback(async (doc: any, pageNum: number) => {
     if (!canvasRef.current || !overlayRef.current) return;
 
     const page = await doc.getPage(pageNum);
@@ -79,208 +67,106 @@ export default function Page() {
     const ov = overlayRef.current;
     ov.width = viewport.width;
     ov.height = viewport.height;
-
-    drawAnnotations(ov, annots, pageNum);
   }, []);
 
-  const drawAnnotations = (ov: HTMLCanvasElement, annots: Annotation[], pageNum: number) => {
-    const ctx = ov.getContext("2d");
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, ov.width, ov.height);
-
-    annots.filter(a => a.page === pageNum).forEach(a => {
-      if (a.type === "highlight") {
-        ctx.fillStyle = "#fbbf2455";
-        ctx.fillRect(a.x, a.y - 10, 120, 20);
-      }
-
-      if (a.type === "text" && a.text) {
-        ctx.fillStyle = "#111";
-        ctx.fillText(a.text, a.x, a.y);
-      }
-
-      if (a.type === "draw" && a.path) {
-        ctx.strokeStyle = "#e11d48";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        a.path.forEach((pt, i) =>
-          i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)
-        );
-        ctx.stroke();
-      }
-    });
-  };
-
-  // ── RE-RENDER ────────────────────────────
   useEffect(() => {
     if (!pdfBytes) return;
 
     (async () => {
-      const pdfjsLib = await import("pdfjs-dist");
-      const { getDocument } = pdfjsLib as any;
+      const pdfjs = await import("pdfjs-dist");
+      const { getDocument, GlobalWorkerOptions } = pdfjs as any;
+
+      GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
       const doc = await getDocument({ data: pdfBytes }).promise;
-      renderPage(doc, currentPage, annotations);
+      setPageCount(doc.numPages);
+      renderPage(doc, currentPage);
     })();
-  }, [pdfBytes, currentPage, annotations, renderPage]);
+  }, [pdfBytes, currentPage, renderPage]);
 
-  // ── HELPERS ──────────────────────────────
   const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!overlayRef.current) return { x: 0, y: 0 };
-
-    const rect = overlayRef.current.getBoundingClientRect();
+    const rect = overlayRef.current!.getBoundingClientRect();
     return {
-      x: ((e.clientX - rect.left) * overlayRef.current.width) / rect.width,
-      y: ((e.clientY - rect.top) * overlayRef.current.height) / rect.height,
+      x: ((e.clientX - rect.left) * overlayRef.current!.width) / rect.width,
+      y: ((e.clientY - rect.top) * overlayRef.current!.height) / rect.height,
     };
   };
 
-  const uid = () =>
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
-
-  const download = (bytes: Uint8Array, name: string) => {
-    const buffer = toArrayBuffer(bytes);
-    const url = URL.createObjectURL(new Blob([buffer]));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // ── INTERACTIONS ─────────────────────────
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const pos = getPos(e);
-
-    if (activeTool === "text") {
-      setPendingPos(pos);
-      return;
-    }
-
-    if (activeTool === "highlight") {
-      setAnnotations(prev => [...prev, { id: uid(), type: "highlight", page: currentPage, x: pos.x, y: pos.y }]);
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (activeTool !== "draw") return;
-    setDrawing(true);
-    setLivePath([getPos(e)]);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!drawing) return;
-    setLivePath(prev => [...prev, getPos(e)]);
-  };
-
-  const handleMouseUp = () => {
-    if (!drawing) return;
-    setDrawing(false);
-
-    if (livePath.length > 1) {
-      setAnnotations(prev => [...prev, { id: uid(), type: "draw", page: currentPage, x: 0, y: 0, path: livePath }]);
-    }
-
-    setLivePath([]);
+    if (activeTool !== "text") return;
+    setPendingPos(getPos(e));
   };
 
   const commitText = () => {
     if (!pendingPos || !textValue.trim()) return;
 
-    setAnnotations(prev => [
+    setAnnotations((prev) => [
       ...prev,
-      { id: uid(), type: "text", page: currentPage, x: pendingPos.x, y: pendingPos.y, text: textValue }
+      { id: crypto.randomUUID(), type: "text", page: currentPage, x: pendingPos.x, y: pendingPos.y, text: textValue },
     ]);
 
     setTextValue("");
     setPendingPos(null);
   };
 
-  // ── ROTATE ───────────────────────────────
-  const rotatePage = async () => {
-    if (!pdfBytes) return;
-
-    const doc = await PDFDocument.load(pdfBytes);
-    const page = doc.getPage(currentPage - 1);
-
-    const currentRotation = page.getRotation().angle;
-    page.setRotation(degrees((currentRotation + 90) % 360));
-
-    const saved = await doc.save();
-    setPdfBytes(toArrayBuffer(saved));
-  };
-
-  // ── EXPORT ───────────────────────────────
   const exportPDF = async () => {
-    if (!pdfBytes) return;
+    if (!pdfBytes || !overlayRef.current) return;
 
     const doc = await PDFDocument.load(pdfBytes);
     const font = await doc.embedFont(StandardFonts.Helvetica);
 
-    for (const ann of annotations) {
-      if (ann.type !== "text" || !ann.text) continue;
+    const page = doc.getPage(currentPage - 1);
+    const { height, width } = page.getSize();
 
-      const page = doc.getPage(ann.page - 1);
-      const { height } = page.getSize();
+    const rect = overlayRef.current.getBoundingClientRect();
+    const scaleX = width / rect.width;
+    const scaleY = height / rect.height;
 
-      page.drawText(ann.text, {
-        x: ann.x / 1.5,
-        y: height - ann.y / 1.5,
+    annotations.forEach((a) => {
+      if (a.type !== "text" || !a.text) return;
+
+      page.drawText(a.text, {
+        x: a.x * scaleX,
+        y: height - a.y * scaleY,
         size: 14,
         font,
         color: rgb(0, 0, 0),
       });
-    }
+    });
 
     const bytes = await doc.save();
-    download(bytes, "edited.pdf");
+    const buffer = toArrayBuffer(bytes);
+
+    const url = URL.createObjectURL(new Blob([buffer]));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "edited.pdf";
+    a.click();
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <AdBlock />
+      <h2>Editor</h2>
 
-      <button onClick={() => fileRef.current?.click()}>Upload PDF</button>
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".pdf"
-        style={{ display: "none" }}
-        onChange={e => e.target.files?.[0] && loadFile(e.target.files[0])}
-      />
-
-      <div style={{ marginTop: 10 }}>
-        <button onClick={() => setActiveTool("text")}>Text</button>
-        <button onClick={() => setActiveTool("highlight")}>Highlight</button>
-        <button onClick={() => setActiveTool("draw")}>Draw</button>
-      </div>
-
-      <button onClick={rotatePage}>Rotate</button>
+      <button onClick={() => setActiveTool("text")}>Text</button>
       <button onClick={exportPDF}>Export</button>
+
+      <div>
+        Page {currentPage} / {pageCount}
+      </div>
 
       <div style={{ position: "relative", marginTop: 20 }}>
         <canvas ref={canvasRef} />
-        <canvas
-          ref={overlayRef}
-          onClick={handleClick}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          style={{ position: "absolute", top: 0, left: 0 }}
-        />
+        <canvas ref={overlayRef} onClick={handleClick} style={{ position: "absolute", top: 0 }} />
       </div>
 
       {pendingPos && (
         <div>
-          <input value={textValue} onChange={e => setTextValue(e.target.value)} />
+          <input value={textValue} onChange={(e) => setTextValue(e.target.value)} />
           <button onClick={commitText}>Add</button>
         </div>
       )}
-
-      <AdBlock />
     </div>
   );
 }
