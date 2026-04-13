@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AdBlock from "@/components/AdBlock";
 
 export default function Home() {
   return (
@@ -14,7 +15,7 @@ export default function Home() {
         fontFamily: "Arial",
       }}
     >
-      {/* HERO ONLY */}
+      {/* HERO */}
       <div
         style={{
           textAlign: "center",
@@ -46,6 +47,9 @@ export default function Home() {
             Start Editing PDF
           </button>
         </Link>
+
+        {/* ✅ AD HERE */}
+        <AdBlock />
       </div>
 
       {/* SEO TEXT */}
@@ -60,8 +64,7 @@ export default function Home() {
       >
         <p>
           EditZap is a free online PDF editor that allows you to edit PDFs,
-          merge multiple files, and split documents instantly. No upload,
-          fully secure, and fast.
+          merge files, and split documents instantly. Secure and fast.
         </p>
       </div>
     </div>
