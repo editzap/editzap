@@ -15,18 +15,25 @@ type Box = {
 };
 
 export default function Editor() {
+  const [tab, setTab] = useState<"edit" | "merge" | "split">("edit");
+
+  // EDIT
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [drawing, setDrawing] = useState(false);
-  const [start, setStart] = useState<{ x: number; y: number } | null>(null);
+  const [start, setStart] = useState<any>(null);
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
-
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // UPLOAD
+  // MERGE / SPLIT
+  const [mergeFiles, setMergeFiles] = useState<File[]>([]);
+  const [splitFile, setSplitFile] = useState<File | null>(null);
+
+  // ================= EDIT =================
+
   const handleUpload = (e: any) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -34,10 +41,8 @@ export default function Editor() {
     setFile(f);
     setPdfUrl(URL.createObjectURL(f));
     setBoxes([]);
-    setSelected(null);
   };
 
-  // START DRAW
   const handleMouseDown = (e: any) => {
     if (!containerRef.current || drawing) return;
 
@@ -62,11 +67,10 @@ export default function Editor() {
     setDrawing(true);
   };
 
-  // DRAW
   const handleMouseMove = (e: any) => {
-    if (!drawing || !start || !containerRef.current) return;
+    if (!drawing || !start) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
+    const rect = containerRef.current!.getBoundingClientRect();
 
     setCurrentBox((prev) =>
       prev
@@ -79,30 +83,17 @@ export default function Editor() {
     );
   };
 
-  // END DRAW (FIXED)
   const handleMouseUp = () => {
     if (!drawing) return;
 
-    if (
-      currentBox &&
-      Math.abs(currentBox.width) > 10 &&
-      Math.abs(currentBox.height) > 10
-    ) {
+    if (currentBox && Math.abs(currentBox.width) > 10) {
       setBoxes((prev) => [...prev, currentBox]);
     }
 
     setDrawing(false);
-    setStart(null);
     setCurrentBox(null);
   };
 
-  // DELETE
-  const deleteBox = (i: number) => {
-    setBoxes((prev) => prev.filter((_, index) => index !== i));
-    setSelected(null);
-  };
-
-  // UPDATE
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
@@ -113,7 +104,11 @@ export default function Editor() {
     });
   };
 
-  // EXPORT
+  const deleteBox = (i: number) => {
+    setBoxes((prev) => prev.filter((_, idx) => idx !== i));
+    setSelected(null);
+  };
+
   const exportPDF = async () => {
     if (!file) return;
 
@@ -122,10 +117,10 @@ export default function Editor() {
     const page = pdfDoc.getPages()[0];
     const height = page.getHeight();
 
-    for (const b of boxes) {
-      if (!b.text) continue;
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    boxes.forEach((b) => {
+      if (!b.text) return;
 
       const r = parseInt(b.color.slice(1, 3), 16) / 255;
       const g = parseInt(b.color.slice(3, 5), 16) / 255;
@@ -138,210 +133,198 @@ export default function Editor() {
         font,
         color: rgb(r, g, bl),
       });
-    }
+    });
 
     const pdfBytes = await pdfDoc.save();
 
-    const blob = new Blob([new Uint8Array(pdfBytes)], {
-      type: "application/pdf",
-    });
-
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(
+      new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" })
+    );
     a.download = "edited.pdf";
     a.click();
   };
 
+  // ================= MERGE =================
+
+  const mergePDFs = async () => {
+    const merged = await PDFDocument.create();
+
+    for (const f of mergeFiles) {
+      const bytes = await f.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes);
+      const pages = await merged.copyPages(pdf, pdf.getPageIndices());
+      pages.forEach((p) => merged.addPage(p));
+    }
+
+    const pdfBytes = await merged.save();
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(
+      new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" })
+    );
+    a.download = "merged.pdf";
+    a.click();
+  };
+
+  // ================= SPLIT =================
+
+  const splitPDF = async () => {
+    if (!splitFile) return;
+
+    const bytes = await splitFile.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(bytes);
+
+    for (let i = 0; i < pdfDoc.getPageCount(); i++) {
+      const newPdf = await PDFDocument.create();
+      const [page] = await newPdf.copyPages(pdfDoc, [i]);
+      newPdf.addPage(page);
+
+      const pdfBytes = await newPdf.save();
+
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(
+        new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" })
+      );
+      a.download = `page-${i + 1}.pdf`;
+      a.click();
+    }
+  };
+
+  // ================= UI =================
+
   return (
-    <div style={{ height: "100vh", background: "#f3f4f6" }}>
+    <div style={{ display: "flex", height: "100vh" }}>
       
-      {/* TOP BAR */}
-      <div
-        style={{
-          background: "#fff",
-          padding: "15px 30px",
-          display: "flex",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #ddd",
-        }}
-      >
-        <h2>⚡ EditZap Editor</h2>
+      {/* SIDEBAR */}
+      <div style={{ width: 220, background: "#111827", color: "#fff", padding: 20 }}>
+        <h2>⚡ EditZap</h2>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <label
+        {["edit", "merge", "split"].map((t) => (
+          <div
+            key={t}
+            onClick={() => setTab(t as any)}
             style={{
-              background: "black",
-              color: "#fff",
-              padding: "8px 15px",
-              borderRadius: 6,
+              marginTop: 20,
               cursor: "pointer",
+              fontWeight: tab === t ? "bold" : "normal",
             }}
           >
-            Upload
-            <input type="file" hidden onChange={handleUpload} />
-          </label>
-
-          <button
-            onClick={exportPDF}
-            style={{
-              background: "#16a34a",
-              color: "#fff",
-              padding: "8px 15px",
-              borderRadius: 6,
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            Export
-          </button>
-        </div>
+            {t.toUpperCase()}
+          </div>
+        ))}
       </div>
 
-      {/* TOOLBAR */}
-      {selected !== null && (
-        <div
-          style={{
-            background: "#fff",
-            padding: 10,
-            display: "flex",
-            gap: 10,
-            borderBottom: "1px solid #ddd",
-          }}
-        >
-          <input
-            type="number"
-            value={boxes[selected].size}
-            onChange={(e) =>
-              updateBox({ size: parseInt(e.target.value) || 16 })
-            }
-          />
+      {/* MAIN */}
+      <div style={{ flex: 1, padding: 20 }}>
+        
+        {/* EDIT */}
+        {tab === "edit" && (
+          <>
+            <input type="file" onChange={handleUpload} />
+            <button onClick={exportPDF}>Export</button>
 
-          <input
-            type="color"
-            value={boxes[selected].color}
-            onChange={(e) => updateBox({ color: e.target.value })}
-          />
-
-          <button onClick={() => updateBox({ bold: !boxes[selected].bold })}>
-            B
-          </button>
-        </div>
-      )}
-
-      {/* WORK AREA */}
-      <div style={{ display: "flex", justifyContent: "center", padding: 20 }}>
-        {pdfUrl && (
-          <div
-            ref={containerRef}
-            style={{
-              position: "relative",
-              width: 800,
-              height: 600,
-              background: "#fff",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
-            }}
-          >
-            <iframe
-              src={pdfUrl}
-              width="100%"
-              height="100%"
-              style={{ position: "absolute", zIndex: 1 }}
-            />
-
-            <div
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              style={{
-                position: "absolute",
-                width: "100%",
-                height: "100%",
-                zIndex: 5,
-                cursor: "crosshair",
-              }}
-            />
-
-            {currentBox && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: currentBox.x,
-                  top: currentBox.y,
-                  width: currentBox.width,
-                  height: currentBox.height,
-                  border: "2px dashed black",
-                  zIndex: 10,
-                }}
-              />
+            {selected !== null && (
+              <div>
+                <input
+                  type="number"
+                  value={boxes[selected].size}
+                  onChange={(e) =>
+                    updateBox({ size: parseInt(e.target.value) })
+                  }
+                />
+                <input
+                  type="color"
+                  value={boxes[selected].color}
+                  onChange={(e) =>
+                    updateBox({ color: e.target.value })
+                  }
+                />
+              </div>
             )}
 
-            {boxes.map((b, i) => (
+            {pdfUrl && (
               <div
-                key={i}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelected(i);
-                }}
-                style={{
-                  position: "absolute",
-                  left: b.x,
-                  top: b.y,
-                  width: b.width,
-                  height: b.height,
-                  border:
-                    selected === i
-                      ? "2px solid black"
-                      : "1px solid gray",
-                  background: "#fff",
-                  zIndex: 20,
-                }}
+                ref={containerRef}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                style={{ position: "relative", marginTop: 20 }}
               >
-                <div
-                  contentEditable
-                  suppressContentEditableWarning
-                  onInput={(e) => {
-                    const val = (e.target as HTMLDivElement).innerText;
+                <iframe src={pdfUrl} width="100%" height="600px" />
 
-                    setBoxes((prev) => {
-                      const updated = [...prev];
-                      updated[i].text = val;
-                      return updated;
-                    });
-                  }}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    padding: 6,
-                    fontSize: b.size,
-                    color: b.color,
-                    fontWeight: b.bold ? "bold" : "normal",
-                    outline: "none",
-                  }}
-                >
-                  {b.text || "Type"}
-                </div>
-
-                {selected === i && (
-                  <button
-                    onClick={() => deleteBox(i)}
+                {currentBox && (
+                  <div
                     style={{
                       position: "absolute",
-                      top: -10,
-                      right: -10,
-                      background: "red",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: 22,
-                      height: 22,
+                      left: currentBox.x,
+                      top: currentBox.y,
+                      width: currentBox.width,
+                      height: currentBox.height,
+                      border: "2px dashed black",
+                    }}
+                  />
+                )}
+
+                {boxes.map((b, i) => (
+                  <div
+                    key={i}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(i);
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: b.x,
+                      top: b.y,
+                      width: b.width,
+                      height: b.height,
+                      border: "1px solid black",
+                      background: "#fff",
                     }}
                   >
-                    ×
-                  </button>
-                )}
+                    <div
+                      contentEditable
+                      suppressContentEditableWarning
+                      onInput={(e) => {
+                        const val = (e.target as HTMLDivElement).innerText;
+                        setBoxes((prev) => {
+                          const updated = [...prev];
+                          updated[i].text = val;
+                          return updated;
+                        });
+                      }}
+                      style={{
+                        padding: 4,
+                        fontSize: b.size,
+                        color: b.color,
+                      }}
+                    >
+                      {b.text || "Type"}
+                    </div>
+
+                    <button onClick={() => deleteBox(i)}>×</button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
+        )}
+
+        {/* MERGE */}
+        {tab === "merge" && (
+          <>
+            <input type="file" multiple onChange={(e) => setMergeFiles(Array.from(e.target.files || []))} />
+            <button onClick={mergePDFs}>Merge PDFs</button>
+          </>
+        )}
+
+        {/* SPLIT */}
+        {tab === "split" && (
+          <>
+            <input type="file" onChange={(e) => setSplitFile(e.target.files?.[0] || null)} />
+            <button onClick={splitPDF}>Split PDF</button>
+          </>
         )}
       </div>
     </div>
