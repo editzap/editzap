@@ -22,11 +22,14 @@ export default function Home() {
   const [text, setText] = useState("");
   const [size, setSize] = useState(16);
 
+  const [mergeFiles, setMergeFiles] = useState<File[]>([]);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<number | null>(null);
 
-  // UPLOAD
-  const handleUpload = (e: any) => {
+  // ================= EDIT =================
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
 
@@ -36,7 +39,6 @@ export default function Home() {
     setSelected(null);
   };
 
-  // CLOSE
   const handleClose = () => {
     setFile(null);
     setPdfUrl(null);
@@ -44,7 +46,6 @@ export default function Home() {
     setSelected(null);
   };
 
-  // ADD BOX
   const handleClick = (e: any) => {
     const rect = e.currentTarget.getBoundingClientRect();
 
@@ -61,7 +62,6 @@ export default function Home() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  // SELECT
   const handleSelect = (i: number, e: any) => {
     e.stopPropagation();
     setSelected(i);
@@ -69,7 +69,6 @@ export default function Home() {
     setSize(boxes[i].size);
   };
 
-  // UPDATE
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
@@ -80,7 +79,6 @@ export default function Home() {
     });
   };
 
-  // DRAG
   const startDrag = (i: number, e: any) => {
     e.stopPropagation();
     dragRef.current = i;
@@ -106,7 +104,6 @@ export default function Home() {
     dragRef.current = null;
   };
 
-  // DELETE
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (selected === null) return;
@@ -121,7 +118,6 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selected]);
 
-  // EXPORT
   const applyToPDF = async () => {
     if (!file) return;
 
@@ -158,12 +154,53 @@ export default function Home() {
     a.click();
   };
 
+  // ================= MERGE =================
+
+  const handleMergeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    setMergeFiles(Array.from(e.target.files));
+  };
+
+  const mergePDFs = async () => {
+    if (mergeFiles.length < 2) {
+      alert("Select at least 2 PDFs");
+      return;
+    }
+
+    const mergedPdf = await PDFDocument.create();
+
+    for (const file of mergeFiles) {
+      const bytes = await file.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes);
+
+      const pages = await mergedPdf.copyPages(
+        pdf,
+        pdf.getPageIndices()
+      );
+
+      pages.forEach((page) => mergedPdf.addPage(page));
+    }
+
+    const pdfBytes = await mergedPdf.save();
+
+    const blob = new Blob([new Uint8Array(pdfBytes)], {
+      type: "application/pdf",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "merged.pdf";
+    a.click();
+  };
+
   return (
     <div style={{ maxWidth: 900, margin: "auto" }}>
       
       {/* TABS */}
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        {["edit", "merge", "split"].map((tab) => (
+        {["edit", "merge"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -173,7 +210,8 @@ export default function Home() {
               fontWeight: "bold",
               background: activeTab === tab ? "#000" : "#eee",
               color: activeTab === tab ? "#fff" : "#000",
-              border: "none"
+              border: "none",
+              cursor: "pointer"
             }}
           >
             {tab.toUpperCase()}
@@ -181,7 +219,7 @@ export default function Home() {
         ))}
       </div>
 
-      {/* EDIT TAB */}
+      {/* EDIT */}
       {activeTab === "edit" && (
         <>
           <input type="file" onChange={handleUpload} />
@@ -219,13 +257,25 @@ export default function Home() {
               onClick={handleClick}
               onMouseMove={move}
               onMouseUp={stopDrag}
-              style={{ position: "relative", marginTop: 20, border: "2px solid black" }}
+              style={{
+                position: "relative",
+                marginTop: 20,
+                border: "2px solid black"
+              }}
             >
-              <button onClick={handleClose} style={{ position: "absolute", right: 10 }}>
+              <button
+                onClick={handleClose}
+                style={{ position: "absolute", right: 10 }}
+              >
                 ✕
               </button>
 
-              <iframe src={pdfUrl} width="100%" height="500px" style={{ pointerEvents: "none" }} />
+              <iframe
+                src={pdfUrl}
+                width="100%"
+                height="500px"
+                style={{ pointerEvents: "none" }}
+              />
 
               {boxes.map((b, i) => (
                 <div
@@ -237,9 +287,13 @@ export default function Home() {
                     left: b.x,
                     top: b.y,
                     fontSize: b.size,
-                    border: selected === i ? "2px solid blue" : "1px dashed black",
+                    border:
+                      selected === i
+                        ? "2px solid blue"
+                        : "1px dashed black",
                     background: "#fff",
-                    padding: 2
+                    padding: 2,
+                    cursor: "move"
                   }}
                 >
                   {b.text || "Type"}
@@ -250,29 +304,33 @@ export default function Home() {
         </>
       )}
 
-      {/* CONTENT FOR ADSENSE */}
-      <div style={{ marginTop: 40 }}>
-        <h2>Free Online PDF Editor - EditZap</h2>
+      {/* MERGE */}
+      {activeTab === "merge" && (
+        <div style={{ marginTop: 20 }}>
+          <h2>MERGE PDFs</h2>
 
-        <p>
-          EditZap is a free online PDF editor that allows you to easily add text to your documents.
-          Upload your file, edit instantly, and download your updated PDF in seconds.
-        </p>
+          <input
+            type="file"
+            multiple
+            accept="application/pdf"
+            onChange={handleMergeUpload}
+          />
 
-        <h3>Features</h3>
-        <ul>
-          <li>Add text to PDF</li>
-          <li>Fast and secure editing</li>
-          <li>No installation required</li>
-          <li>Works on all devices</li>
-        </ul>
+          <p>{mergeFiles.length} file(s) selected</p>
 
-        <h3>Why Choose EditZap?</h3>
-        <p>
-          EditZap is simple, fast, and completely free. Unlike other tools, it does not require
-          signup and works directly in your browser.
-        </p>
-      </div>
+          <button
+            onClick={mergePDFs}
+            style={{
+              marginTop: 10,
+              padding: "10px 15px",
+              fontWeight: "bold",
+              cursor: "pointer"
+            }}
+          >
+            MERGE & DOWNLOAD
+          </button>
+        </div>
+      )}
     </div>
   );
 }
