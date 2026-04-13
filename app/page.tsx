@@ -29,6 +29,7 @@ export default function Home() {
   const dragRef = useRef<number | null>(null);
 
   // ===== EDIT =====
+
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -55,6 +56,13 @@ export default function Home() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  const handleSelect = (i: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelected(i);
+    setText(boxes[i].text);
+    setSize(boxes[i].size);
+  };
+
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
@@ -64,6 +72,45 @@ export default function Home() {
       return updated;
     });
   };
+
+  const startDrag = (i: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    dragRef.current = i;
+  };
+
+  const move = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (dragRef.current === null) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    setBoxes((prev) => {
+      const updated = [...prev];
+      updated[dragRef.current!] = {
+        ...updated[dragRef.current!],
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
+      return updated;
+    });
+  };
+
+  const stopDrag = () => {
+    dragRef.current = null;
+  };
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (selected === null) return;
+
+      if (e.key === "Delete") {
+        setBoxes((prev) => prev.filter((_, i) => i !== selected));
+        setSelected(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [selected]);
 
   const applyToPDF = async () => {
     if (!file) return;
@@ -100,6 +147,7 @@ export default function Home() {
   };
 
   // ===== MERGE =====
+
   const handleMergeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     setMergeFiles(Array.from(e.target.files));
@@ -138,6 +186,7 @@ export default function Home() {
   };
 
   // ===== SPLIT =====
+
   const handleSplitUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -177,36 +226,22 @@ export default function Home() {
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5", padding: 30 }}>
       
-      {/* HEADER */}
-      <h1 style={{ textAlign: "center", fontWeight: "bold" }}>
-        ⚡ EditZap
-      </h1>
+      <h1 style={{ textAlign: "center" }}>⚡ EditZap</h1>
 
-      {/* 🔥 PREMIUM TABS */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 12,
-          marginTop: 20,
-        }}
-      >
+      {/* TABS */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
         {["edit", "merge", "split"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
             style={{
               padding: "10px 18px",
-              borderRadius: 8,
               fontWeight: "bold",
+              borderRadius: 8,
               border: "none",
-              cursor: "pointer",
-              background: activeTab === tab ? "#000" : "#e0e0e0",
+              background: activeTab === tab ? "#000" : "#ddd",
               color: activeTab === tab ? "#fff" : "#000",
-              boxShadow:
-                activeTab === tab
-                  ? "0 3px 10px rgba(0,0,0,0.2)"
-                  : "none",
+              cursor: "pointer",
             }}
           >
             {tab.toUpperCase()}
@@ -240,9 +275,30 @@ export default function Home() {
             {pdfUrl && (
               <div
                 onClick={handleClick}
-                style={{ marginTop: 20 }}
+                onMouseMove={move}
+                onMouseUp={stopDrag}
+                style={{ position: "relative", marginTop: 20 }}
               >
                 <iframe src={pdfUrl} width="100%" height="500px" />
+
+                {boxes.map((b, i) => (
+                  <div
+                    key={i}
+                    onClick={(e) => handleSelect(i, e)}
+                    onMouseDown={(e) => startDrag(i, e)}
+                    style={{
+                      position: "absolute",
+                      left: b.x,
+                      top: b.y,
+                      fontSize: b.size,
+                      border: "1px solid black",
+                      background: "#fff",
+                      padding: 2,
+                    }}
+                  >
+                    {b.text || "Type"}
+                  </div>
+                ))}
               </div>
             )}
           </>
@@ -252,14 +308,9 @@ export default function Home() {
         {activeTab === "merge" && (
           <>
             <h2>Merge PDFs</h2>
-
             <input type="file" multiple onChange={handleMergeUpload} />
-
             <p>{mergeFiles.length} files selected</p>
-
-            <button onClick={mergePDFs}>
-              MERGE & DOWNLOAD
-            </button>
+            <button onClick={mergePDFs}>MERGE & DOWNLOAD</button>
           </>
         )}
 
@@ -267,12 +318,8 @@ export default function Home() {
         {activeTab === "split" && (
           <>
             <h2>Split PDF</h2>
-
             <input type="file" onChange={handleSplitUpload} />
-
-            <button onClick={splitPDF}>
-              SPLIT & DOWNLOAD
-            </button>
+            <button onClick={splitPDF}>SPLIT & DOWNLOAD</button>
           </>
         )}
       </div>
