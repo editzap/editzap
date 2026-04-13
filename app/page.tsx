@@ -8,6 +8,9 @@ type Box = {
   width: number;
   height: number;
   text: string;
+  size: number;
+  color: string;
+  bold: boolean;
 };
 
 export default function Editor() {
@@ -32,7 +35,7 @@ export default function Editor() {
 
   // START DRAW
   const handleMouseDown = (e: any) => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || drawing) return;
 
     const rect = containerRef.current.getBoundingClientRect();
 
@@ -40,7 +43,18 @@ export default function Editor() {
     const y = e.clientY - rect.top;
 
     setStart({ x, y });
-    setCurrentBox({ x, y, width: 0, height: 0, text: "" });
+
+    setCurrentBox({
+      x,
+      y,
+      width: 0,
+      height: 0,
+      text: "",
+      size: 16,
+      color: "#000000",
+      bold: false,
+    });
+
     setDrawing(true);
   };
 
@@ -53,18 +67,22 @@ export default function Editor() {
     const width = e.clientX - rect.left - start.x;
     const height = e.clientY - rect.top - start.y;
 
-    setCurrentBox({
-      x: start.x,
-      y: start.y,
-      width,
-      height,
-      text: "",
-    });
+    setCurrentBox((prev) =>
+      prev
+        ? {
+            ...prev,
+            width,
+            height,
+          }
+        : null
+    );
   };
 
-  // END DRAW
+  // END DRAW (FIXED)
   const handleMouseUp = () => {
-    if (currentBox) {
+    if (!drawing) return;
+
+    if (currentBox && Math.abs(currentBox.width) > 10 && Math.abs(currentBox.height) > 10) {
       setBoxes((prev) => [...prev, currentBox]);
     }
 
@@ -79,6 +97,17 @@ export default function Editor() {
     setSelected(null);
   };
 
+  // UPDATE BOX
+  const updateBox = (changes: Partial<Box>) => {
+    if (selected === null) return;
+
+    setBoxes((prev) => {
+      const updated = [...prev];
+      updated[selected] = { ...updated[selected], ...changes };
+      return updated;
+    });
+  };
+
   return (
     <div style={{ height: "100vh", background: "#f3f4f6" }}>
 
@@ -89,73 +118,67 @@ export default function Editor() {
           padding: "15px 30px",
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
           borderBottom: "1px solid #ddd",
         }}
       >
-        <h2 style={{ fontWeight: "bold" }}>⚡ EditZap Editor</h2>
+        <h2>⚡ EditZap Editor</h2>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <label
-            style={{
-              background: "black",
-              color: "#fff",
-              padding: "8px 15px",
-              borderRadius: 6,
-              cursor: "pointer",
-            }}
-          >
-            Upload PDF
-            <input type="file" hidden onChange={handleUpload} />
-          </label>
-
-          <button
-            style={{
-              background: "#16a34a",
-              color: "#fff",
-              padding: "8px 15px",
-              borderRadius: 6,
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            Export
-          </button>
-        </div>
+        <label
+          style={{
+            background: "black",
+            color: "#fff",
+            padding: "8px 15px",
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
+        >
+          Upload PDF
+          <input type="file" hidden onChange={handleUpload} />
+        </label>
       </div>
 
-      {/* WORK AREA */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          padding: 30,
-        }}
-      >
-        {!pdfUrl && (
-          <div
-            style={{
-              background: "#fff",
-              padding: 40,
-              borderRadius: 12,
-              textAlign: "center",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h3>Upload a PDF to start editing</h3>
-            <p style={{ color: "#666" }}>
-              Drag to create text areas on your document
-            </p>
-          </div>
-        )}
+      {/* TOOLBAR */}
+      {selected !== null && (
+        <div
+          style={{
+            background: "#fff",
+            padding: 10,
+            display: "flex",
+            gap: 10,
+            borderBottom: "1px solid #ddd",
+          }}
+        >
+          <input
+            type="number"
+            value={boxes[selected].size}
+            onChange={(e) =>
+              updateBox({ size: parseInt(e.target.value) || 16 })
+            }
+          />
 
+          <input
+            type="color"
+            value={boxes[selected].color}
+            onChange={(e) =>
+              updateBox({ color: e.target.value })
+            }
+          />
+
+          <button onClick={() => updateBox({ bold: !boxes[selected].bold })}>
+            B
+          </button>
+        </div>
+      )}
+
+      {/* WORK AREA */}
+      <div style={{ display: "flex", justifyContent: "center", padding: 20 }}>
         {pdfUrl && (
           <div
             ref={containerRef}
             style={{
               position: "relative",
-              width: "800px",
-              height: "600px",
+              width: 800,
+              height: 600,
               background: "#fff",
               boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
             }}
@@ -182,7 +205,7 @@ export default function Editor() {
               }}
             />
 
-            {/* DRAW */}
+            {/* DRAW PREVIEW */}
             {currentBox && (
               <div
                 style={{
@@ -222,10 +245,22 @@ export default function Editor() {
                 <div
                   contentEditable
                   suppressContentEditableWarning
+                  onInput={(e) => {
+                    const val = (e.target as HTMLDivElement).innerText;
+
+                    setBoxes((prev) => {
+                      const updated = [...prev];
+                      updated[i].text = val;
+                      return updated;
+                    });
+                  }}
                   style={{
                     width: "100%",
                     height: "100%",
                     padding: 6,
+                    fontSize: b.size,
+                    color: b.color,
+                    fontWeight: b.bold ? "bold" : "normal",
                     outline: "none",
                   }}
                 >
@@ -245,7 +280,6 @@ export default function Editor() {
                       borderRadius: "50%",
                       width: 22,
                       height: 22,
-                      cursor: "pointer",
                     }}
                   >
                     ×
