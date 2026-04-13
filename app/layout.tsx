@@ -44,10 +44,10 @@ export default function RootLayout({
           </Link>
         </header>
 
-        {/* PAGE CONTENT */}
-        <main>{children}</main>
+        {/* MAIN CONTENT (FIXED) */}
+        <main style={main}>{children}</main>
 
-        {/* MINIMAL FOOTER */}
+        {/* FOOTER */}
         <footer style={footer}>
           <div style={footerBottom}>
             © {new Date().getFullYear()} EditZap · Crafted for fast, private PDF editing
@@ -63,6 +63,7 @@ export default function RootLayout({
 const body: React.CSSProperties = {
   margin: 0,
   fontFamily: "system-ui",
+  background: "#fff",
 };
 
 /* HEADER */
@@ -75,7 +76,8 @@ const header: React.CSSProperties = {
   alignItems: "center",
   padding: "14px 24px",
   backdropFilter: "blur(10px)",
-  background: "rgba(255,255,255,0.7)",
+  WebkitBackdropFilter: "blur(10px)",
+  background: "rgba(255,255,255,0.9)",
   borderBottom: "1px solid rgba(0,0,0,0.05)",
 };
 
@@ -106,7 +108,7 @@ const navItem: React.CSSProperties = {
   color: "#444",
 };
 
-/* LINK RESET (IMPORTANT) */
+/* LINK RESET */
 const linkReset: React.CSSProperties = {
   textDecoration: "none",
   display: "inline-block",
@@ -122,6 +124,11 @@ const ctaBtn: React.CSSProperties = {
   border: "none",
   cursor: "pointer",
   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+};
+
+/* MAIN (IMPORTANT FIX) */
+const main: React.CSSProperties = {
+  minHeight: "calc(100vh - 120px)",
 };
 
 /* FOOTER */
