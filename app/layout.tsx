@@ -11,6 +11,8 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
 
+  const isActive = (path: string) => pathname === path;
+
   return (
     <html lang="en">
       <body style={body}>
@@ -26,21 +28,24 @@ export default function RootLayout({
 
           {/* NAV */}
           <nav style={navLinks}>
-            <Link href="/" style={linkReset}>
-              <span style={navItem}>Home</span>
-            </Link>
-
-            <Link href="/about" style={linkReset}>
-              <span style={navItem}>About</span>
-            </Link>
-
-            <Link href="/privacy" style={linkReset}>
-              <span style={navItem}>Privacy</span>
-            </Link>
-
-            <Link href="/contact" style={linkReset}>
-              <span style={navItem}>Contact</span>
-            </Link>
+            {[
+              { name: "Home", path: "/" },
+              { name: "About", path: "/about" },
+              { name: "Privacy", path: "/privacy" },
+              { name: "Contact", path: "/contact" },
+            ].map((item) => (
+              <Link key={item.path} href={item.path} style={linkReset}>
+                <span
+                  style={{
+                    ...navItem,
+                    ...(isActive(item.path) ? activeNavItem : {}),
+                  }}
+                >
+                  {item.name}
+                  <span style={underline} />
+                </span>
+              </Link>
+            ))}
           </nav>
 
           {/* CTA */}
@@ -49,7 +54,7 @@ export default function RootLayout({
           </Link>
         </header>
 
-        {/* MAIN (KEY FIX) */}
+        {/* MAIN */}
         <main key={pathname} style={main}>
           {children}
         </main>
@@ -111,8 +116,26 @@ const navLinks: React.CSSProperties = {
 };
 
 const navItem: React.CSSProperties = {
+  position: "relative",
   cursor: "pointer",
   color: "#444",
+  paddingBottom: 2,
+};
+
+const activeNavItem: React.CSSProperties = {
+  color: "#111",
+  fontWeight: 600,
+};
+
+/* UNDERLINE ANIMATION */
+const underline: React.CSSProperties = {
+  position: "absolute",
+  left: 0,
+  bottom: 0,
+  height: 2,
+  width: "0%",
+  background: "#111",
+  transition: "width 0.25s ease",
 };
 
 /* LINK RESET */
