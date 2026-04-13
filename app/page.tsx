@@ -80,118 +80,182 @@ export default function Editor() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>⚡ EditZap</h1>
+    <div style={{ height: "100vh", background: "#f3f4f6" }}>
 
-      <input type="file" onChange={handleUpload} />
+      {/* TOP BAR */}
+      <div
+        style={{
+          background: "#fff",
+          padding: "15px 30px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: "1px solid #ddd",
+        }}
+      >
+        <h2 style={{ fontWeight: "bold" }}>⚡ EditZap Editor</h2>
 
-      {pdfUrl && (
-        <div
-          ref={containerRef}
-          style={{
-            position: "relative",
-            marginTop: 20,
-            width: "100%",
-            height: 600,
-          }}
-        >
-          {/* PDF */}
-          <iframe
-            src={pdfUrl}
-            width="100%"
-            height="600px"
-            style={{ position: "absolute", top: 0, left: 0, zIndex: 1 }}
-          />
-
-          {/* INTERACTION LAYER */}
-          <div
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+        <div style={{ display: "flex", gap: 10 }}>
+          <label
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              zIndex: 5,
-              cursor: "crosshair",
+              background: "black",
+              color: "#fff",
+              padding: "8px 15px",
+              borderRadius: 6,
+              cursor: "pointer",
             }}
-          />
+          >
+            Upload PDF
+            <input type="file" hidden onChange={handleUpload} />
+          </label>
 
-          {/* DRAW BOX */}
-          {currentBox && (
+          <button
+            style={{
+              background: "#16a34a",
+              color: "#fff",
+              padding: "8px 15px",
+              borderRadius: 6,
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Export
+          </button>
+        </div>
+      </div>
+
+      {/* WORK AREA */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          padding: 30,
+        }}
+      >
+        {!pdfUrl && (
+          <div
+            style={{
+              background: "#fff",
+              padding: 40,
+              borderRadius: 12,
+              textAlign: "center",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+            }}
+          >
+            <h3>Upload a PDF to start editing</h3>
+            <p style={{ color: "#666" }}>
+              Drag to create text areas on your document
+            </p>
+          </div>
+        )}
+
+        {pdfUrl && (
+          <div
+            ref={containerRef}
+            style={{
+              position: "relative",
+              width: "800px",
+              height: "600px",
+              background: "#fff",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
+            }}
+          >
+            {/* PDF */}
+            <iframe
+              src={pdfUrl}
+              width="100%"
+              height="100%"
+              style={{ position: "absolute", zIndex: 1 }}
+            />
+
+            {/* INTERACTION */}
             <div
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
               style={{
                 position: "absolute",
-                left: currentBox.x,
-                top: currentBox.y,
-                width: currentBox.width,
-                height: currentBox.height,
-                border: "2px dashed black",
-                zIndex: 10,
+                width: "100%",
+                height: "100%",
+                zIndex: 5,
+                cursor: "crosshair",
               }}
             />
-          )}
 
-          {/* FINAL BOXES */}
-          {boxes.map((b, i) => (
-            <div
-              key={i}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelected(i);
-              }}
-              style={{
-                position: "absolute",
-                left: b.x,
-                top: b.y,
-                width: b.width,
-                height: b.height,
-                border:
-                  selected === i
-                    ? "2px solid black"
-                    : "1px solid gray",
-                background: "#fff",
-                zIndex: 20,
-              }}
-            >
+            {/* DRAW */}
+            {currentBox && (
               <div
-                contentEditable
-                suppressContentEditableWarning
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  padding: 4,
-                  outline: "none",
+                  position: "absolute",
+                  left: currentBox.x,
+                  top: currentBox.y,
+                  width: currentBox.width,
+                  height: currentBox.height,
+                  border: "2px dashed black",
+                  zIndex: 10,
+                }}
+              />
+            )}
+
+            {/* BOXES */}
+            {boxes.map((b, i) => (
+              <div
+                key={i}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelected(i);
+                }}
+                style={{
+                  position: "absolute",
+                  left: b.x,
+                  top: b.y,
+                  width: b.width,
+                  height: b.height,
+                  border:
+                    selected === i
+                      ? "2px solid black"
+                      : "1px solid gray",
+                  background: "#fff",
+                  zIndex: 20,
                 }}
               >
-                {b.text || "Type"}
-              </div>
-
-              {selected === i && (
-                <button
-                  onClick={() => deleteBox(i)}
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
                   style={{
-                    position: "absolute",
-                    top: -10,
-                    right: -10,
-                    background: "red",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: 20,
-                    height: 20,
-                    cursor: "pointer",
+                    width: "100%",
+                    height: "100%",
+                    padding: 6,
+                    outline: "none",
                   }}
                 >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                  {b.text || "Type"}
+                </div>
+
+                {selected === i && (
+                  <button
+                    onClick={() => deleteBox(i)}
+                    style={{
+                      position: "absolute",
+                      top: -10,
+                      right: -10,
+                      background: "red",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: 22,
+                      height: 22,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
