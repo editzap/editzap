@@ -21,20 +21,20 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
+  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  };
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) handleFile(file);
   };
 
-  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  };
-
   return (
     <div style={container}>
-      <h1>⚡ EditZap</h1>
+      <h1 style={title}>⚡ EditZap</h1>
 
       {/* Tabs */}
       <div style={tabs}>
@@ -49,7 +49,7 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Upload Card */}
+      {/* Card */}
       <div
         style={card}
         onDragOver={(e) => e.preventDefault()}
@@ -57,7 +57,7 @@ export default function Home() {
       >
         <h3>{tab.toUpperCase()} PDF</h3>
 
-        <label style={btn}>
+        <label style={primaryBtn}>
           Upload PDF
           <input
             type="file"
@@ -67,27 +67,36 @@ export default function Home() {
           />
         </label>
 
-        <p style={{ marginTop: 10 }}>Drag & drop PDF here</p>
+        <p style={subText}>Drag & drop supported</p>
       </div>
     </div>
   );
 }
 
-// ── STYLES ──
+/* STYLES */
 const container: React.CSSProperties = {
   padding: 40,
+  maxWidth: 800,
+  margin: "auto",
   textAlign: "center",
+  fontFamily: "system-ui",
+};
+
+const title: React.CSSProperties = {
+  marginBottom: 20,
 };
 
 const tabs: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
   gap: 10,
-  margin: 20,
+  marginBottom: 20,
 };
 
 const tabBtn: React.CSSProperties = {
   padding: "8px 16px",
+  borderRadius: 8,
+  border: "1px solid #ddd",
   cursor: "pointer",
 };
 
@@ -99,14 +108,20 @@ const activeTab: React.CSSProperties = {
 
 const card: React.CSSProperties = {
   padding: 30,
-  border: "1px solid #ccc",
-  borderRadius: 10,
+  borderRadius: 12,
+  boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
 };
 
-const btn: React.CSSProperties = {
+const primaryBtn: React.CSSProperties = {
   padding: "10px 20px",
   background: "#111",
   color: "#fff",
-  cursor: "pointer",
   borderRadius: 8,
+  cursor: "pointer",
+  display: "inline-block",
+};
+
+const subText: React.CSSProperties = {
+  marginTop: 10,
+  color: "#666",
 };

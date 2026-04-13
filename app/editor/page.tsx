@@ -10,14 +10,14 @@ export default function Editor() {
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [text, setText] = useState("");
 
-  // Safe buffer conversion
+  // safe conversion
   const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
     const ab = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(ab).set(bytes);
     return ab;
   };
 
-  // Load from homepage
+  // load data
   useEffect(() => {
     const stored = sessionStorage.getItem("pdfFile");
     const tool = sessionStorage.getItem("tool") as Tab | null;
@@ -31,7 +31,7 @@ export default function Editor() {
     }
   }, []);
 
-  // ── EDIT ──
+  // EDIT
   const exportPDF = async () => {
     if (!pdfBytes) {
       alert("Upload a PDF first");
@@ -51,11 +51,10 @@ export default function Editor() {
       color: rgb(0, 0, 0),
     });
 
-    const bytes = await pdf.save();
-    download(bytes, "edited.pdf");
+    download(await pdf.save(), "edited.pdf");
   };
 
-  // ── MERGE ──
+  // MERGE
   const mergePDFs = async (files: File[]) => {
     if (files.length < 2) {
       alert("Select at least 2 PDFs");
@@ -70,11 +69,10 @@ export default function Editor() {
       pages.forEach((p) => merged.addPage(p));
     }
 
-    const result = await merged.save();
-    download(result, "merged.pdf");
+    download(await merged.save(), "merged.pdf");
   };
 
-  // ── SPLIT ──
+  // SPLIT
   const splitPDF = async () => {
     if (!pdfBytes) {
       alert("No PDF loaded");
@@ -88,12 +86,11 @@ export default function Editor() {
       const [page] = await newPdf.copyPages(pdf, [i]);
       newPdf.addPage(page);
 
-      const bytes = await newPdf.save();
-      download(bytes, `page-${i + 1}.pdf`);
+      download(await newPdf.save(), `page-${i + 1}.pdf`);
     }
   };
 
-  // ── DOWNLOAD ──
+  // DOWNLOAD
   const download = (bytes: Uint8Array, name: string) => {
     const buffer = toArrayBuffer(bytes);
     const url = URL.createObjectURL(new Blob([buffer]));
@@ -108,7 +105,7 @@ export default function Editor() {
 
   return (
     <div style={container}>
-      <h1>⚡ EditZap</h1>
+      <h1 style={title}>⚡ EditZap</h1>
 
       {/* Tabs */}
       <div style={tabs}>
@@ -123,14 +120,14 @@ export default function Editor() {
         ))}
       </div>
 
-      {/* Content */}
+      {/* Card */}
       <div style={card}>
         {tab === "edit" && (
           <>
             <input
-              placeholder="Enter text"
               value={text}
               onChange={(e) => setText(e.target.value)}
+              placeholder="Enter text"
             />
             <br />
             <button onClick={exportPDF}>Export PDF</button>
@@ -159,21 +156,30 @@ export default function Editor() {
   );
 }
 
-// ── STYLES ──
+/* STYLES */
 const container: React.CSSProperties = {
   padding: 40,
+  maxWidth: 800,
+  margin: "auto",
   textAlign: "center",
+  fontFamily: "system-ui",
+};
+
+const title: React.CSSProperties = {
+  marginBottom: 20,
 };
 
 const tabs: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
   gap: 10,
-  margin: 20,
+  marginBottom: 20,
 };
 
 const tabBtn: React.CSSProperties = {
   padding: "8px 16px",
+  borderRadius: 8,
+  border: "1px solid #ddd",
   cursor: "pointer",
 };
 
@@ -185,6 +191,6 @@ const activeTab: React.CSSProperties = {
 
 const card: React.CSSProperties = {
   padding: 30,
-  border: "1px solid #ccc",
-  borderRadius: 10,
+  borderRadius: 12,
+  boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
 };
