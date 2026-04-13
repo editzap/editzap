@@ -16,6 +16,7 @@ export default function Editor() {
     return ab;
   };
 
+  // Load from homepage
   useEffect(() => {
     const stored = sessionStorage.getItem("pdfFile");
     const tool = sessionStorage.getItem("tool") as Tab | null;
@@ -90,86 +91,125 @@ export default function Editor() {
   };
 
   return (
-    <div style={container}>
-      <h1 style={title}>⚡ EditZap</h1>
-
-      {/* Tabs */}
-      <div style={tabs}>
-        {(["edit", "merge", "split"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={tab === t ? activeTab : tabBtn}
-          >
-            {t.toUpperCase()}
-          </button>
-        ))}
+    <div style={wrapper}>
+      {/* TOP BAR */}
+      <div style={topbar}>
+        <h2>⚡ EditZap</h2>
+        <button onClick={exportPDF} style={primaryBtn}>
+          Export
+        </button>
       </div>
 
-      {/* Content */}
-      <div style={card}>
-        {tab === "edit" && (
-          <>
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Enter text"
-            />
-            <button onClick={exportPDF}>Export</button>
-          </>
-        )}
+      <div style={layout}>
+        {/* SIDEBAR */}
+        <div style={sidebar}>
+          {(["edit", "merge", "split"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={tab === t ? activeTab : sideBtn}
+            >
+              {t.toUpperCase()}
+            </button>
+          ))}
+        </div>
 
-        {tab === "merge" && (
-          <input
-            type="file"
-            multiple
-            accept=".pdf"
-            onChange={(e) =>
-              mergePDFs(Array.from(e.target.files || []))
-            }
-          />
-        )}
+        {/* MAIN AREA */}
+        <div style={main}>
+          {tab === "edit" && (
+            <div style={card}>
+              <h3>Edit PDF</h3>
+              <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Enter text"
+              />
+              <p style={{ marginTop: 10 }}>Text will be added on export</p>
+            </div>
+          )}
 
-        {tab === "split" && (
-          <button onClick={splitPDF}>Split PDF</button>
-        )}
+          {tab === "merge" && (
+            <div style={card}>
+              <h3>Merge PDFs</h3>
+              <input
+                type="file"
+                multiple
+                accept=".pdf"
+                onChange={(e) =>
+                  mergePDFs(Array.from(e.target.files || []))
+                }
+              />
+            </div>
+          )}
+
+          {tab === "split" && (
+            <div style={card}>
+              <h3>Split PDF</h3>
+              <button onClick={splitPDF}>Split into pages</button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 /* STYLES */
-const container: React.CSSProperties = {
-  padding: 40,
-  textAlign: "center",
+
+const wrapper: React.CSSProperties = {
+  fontFamily: "system-ui",
 };
 
-const title: React.CSSProperties = {
-  marginBottom: 20,
-};
-
-const tabs: React.CSSProperties = {
+const topbar: React.CSSProperties = {
   display: "flex",
-  justifyContent: "center",
-  gap: 10,
-  marginBottom: 20,
+  justifyContent: "space-between",
+  padding: 16,
+  borderBottom: "1px solid #eee",
 };
 
-const tabBtn: React.CSSProperties = {
-  padding: "8px 16px",
+const layout: React.CSSProperties = {
+  display: "flex",
+  height: "calc(100vh - 60px)",
+};
+
+const sidebar: React.CSSProperties = {
+  width: 200,
+  borderRight: "1px solid #eee",
+  padding: 16,
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+};
+
+const sideBtn: React.CSSProperties = {
+  padding: 10,
   borderRadius: 8,
   border: "1px solid #ddd",
   cursor: "pointer",
 };
 
 const activeTab: React.CSSProperties = {
-  ...tabBtn,
+  ...sideBtn,
   background: "#111",
   color: "#fff",
 };
 
-const card: React.CSSProperties = {
+const main: React.CSSProperties = {
+  flex: 1,
   padding: 30,
+};
+
+const card: React.CSSProperties = {
+  padding: 20,
   borderRadius: 12,
   boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+  maxWidth: 400,
+};
+
+const primaryBtn: React.CSSProperties = {
+  padding: "8px 16px",
+  background: "#111",
+  color: "#fff",
+  borderRadius: 8,
+  cursor: "pointer",
 };
