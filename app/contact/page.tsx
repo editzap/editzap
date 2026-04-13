@@ -8,7 +8,7 @@ export default function Contact() {
       </p>
 
       <p>
-        Email: <strong>editzaphelp@email.com</strong>
+        Email: <strong>editzap.help@email.com</strong>
       </p>
 
       <p>
