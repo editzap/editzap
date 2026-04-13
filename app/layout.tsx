@@ -1,7 +1,4 @@
-export const metadata = {
-  title: "EditZap - Free PDF Editor",
-  description: "Edit PDF online for free. Add text, merge, split instantly.",
-};
+import "./globals.css";
 
 export default function RootLayout({
   children,
@@ -10,60 +7,135 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        
-        {/* GOOGLE VERIFICATION */}
-        <meta
-          name="google-site-verification"
-          content="VlskugI9oL7iR415GO-_cqk_HqfxZSzu4BklP4eWymY"
-        />
-
-        {/* ✅ ADSENSE CODE (VERY IMPORTANT) */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4445312802335744"
-          crossOrigin="anonymous"
-        ></script>
-
-      </head>
-
-      <body style={{ margin: 0, fontFamily: "Arial" }}>
-        
-        {/* NAVBAR */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: 20,
-            borderBottom: "1px solid #ddd",
-          }}
-        >
-          <h2>⚡ EditZap</h2>
-
-          <div style={{ display: "flex", gap: 20 }}>
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/privacy">Privacy</a>
-            <a href="/contact">Contact</a>
+      <body style={body}>
+        {/* HEADER */}
+        <header style={header}>
+          <div style={logoWrap}>
+            <span style={logoIcon}>⚡</span>
+            <span style={logoText}>EditZap</span>
           </div>
-        </div>
 
-        {/* MAIN CONTENT */}
-        {children}
+          <nav style={navLinks}>
+            <span style={navItem}>Home</span>
+            <span style={navItem}>About</span>
+            <span style={navItem}>Privacy</span>
+            <span style={navItem}>Contact</span>
+          </nav>
+
+          <button style={ctaBtn}>Start Editing</button>
+        </header>
+
+        {/* PAGE CONTENT */}
+        <main>{children}</main>
 
         {/* FOOTER */}
-        <div
-          style={{
-            marginTop: 40,
-            padding: 20,
-            textAlign: "center",
-            borderTop: "1px solid #ddd",
-          }}
-        >
-          © 2026 EditZap — Free PDF Tools
-        </div>
+        <footer style={footer}>
+          <div style={footerInner}>
+            <div style={footerBrand}>⚡ EditZap</div>
 
+            <div style={footerLinks}>
+              <span>Home</span>
+              <span>Privacy</span>
+              <span>Contact</span>
+            </div>
+          </div>
+
+          <div style={footerBottom}>
+            © {new Date().getFullYear()} EditZap · Crafted for fast, private PDF editing
+          </div>
+        </footer>
       </body>
     </html>
   );
 }
+
+/* STYLES */
+
+const body: React.CSSProperties = {
+  margin: 0,
+  fontFamily: "system-ui",
+};
+
+/* HEADER */
+const header: React.CSSProperties = {
+  position: "sticky",
+  top: 0,
+  zIndex: 10,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "14px 24px",
+  backdropFilter: "blur(10px)",
+  background: "rgba(255,255,255,0.7)",
+  borderBottom: "1px solid rgba(0,0,0,0.05)",
+};
+
+const logoWrap: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  fontWeight: 600,
+};
+
+const logoIcon: React.CSSProperties = {
+  fontSize: 18,
+};
+
+const logoText: React.CSSProperties = {
+  fontSize: 16,
+};
+
+const navLinks: React.CSSProperties = {
+  display: "flex",
+  gap: 22,
+  fontSize: 14,
+};
+
+const navItem: React.CSSProperties = {
+  cursor: "pointer",
+  color: "#444",
+};
+
+const ctaBtn: React.CSSProperties = {
+  padding: "8px 16px",
+  borderRadius: 999,
+  background: "#111",
+  color: "#fff",
+  fontSize: 13,
+  border: "none",
+  cursor: "pointer",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+};
+
+/* FOOTER */
+const footer: React.CSSProperties = {
+  marginTop: 80,
+  padding: "30px 24px",
+  borderTop: "1px solid rgba(0,0,0,0.06)",
+};
+
+const footerInner: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 20,
+};
+
+const footerBrand: React.CSSProperties = {
+  fontWeight: 600,
+  fontSize: 14,
+};
+
+const footerLinks: React.CSSProperties = {
+  display: "flex",
+  gap: 18,
+  fontSize: 13,
+  color: "#555",
+  cursor: "pointer",
+};
+
+const footerBottom: React.CSSProperties = {
+  textAlign: "center",
+  fontSize: 12,
+  color: "#888",
+};
