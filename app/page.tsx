@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 type Box = {
   x: number;
@@ -21,16 +22,19 @@ export default function Editor() {
   const [selected, setSelected] = useState<number | null>(null);
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   // UPLOAD
   const handleUpload = (e: any) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const f = e.target.files?.[0];
+    if (!f) return;
 
-    setPdfUrl(URL.createObjectURL(file));
+    setFile(f);
+    setPdfUrl(URL.createObjectURL(f));
     setBoxes([]);
+    setSelected(null);
   };
 
   // START DRAW
@@ -64,15 +68,12 @@ export default function Editor() {
 
     const rect = containerRef.current.getBoundingClientRect();
 
-    const width = e.clientX - rect.left - start.x;
-    const height = e.clientY - rect.top - start.y;
-
     setCurrentBox((prev) =>
       prev
         ? {
             ...prev,
-            width,
-            height,
+            width: e.clientX - rect.left - start.x,
+            height: e.clientY - rect.top - start.y,
           }
         : null
     );
@@ -82,7 +83,11 @@ export default function Editor() {
   const handleMouseUp = () => {
     if (!drawing) return;
 
-    if (currentBox && Math.abs(currentBox.width) > 10 && Math.abs(currentBox.height) > 10) {
+    if (
+      currentBox &&
+      Math.abs(currentBox.width) > 10 &&
+      Math.abs(currentBox.height) > 10
+    ) {
       setBoxes((prev) => [...prev, currentBox]);
     }
 
@@ -97,7 +102,7 @@ export default function Editor() {
     setSelected(null);
   };
 
-  // UPDATE BOX
+  // UPDATE
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
@@ -108,9 +113,48 @@ export default function Editor() {
     });
   };
 
+  // EXPORT
+  const exportPDF = async () => {
+    if (!file) return;
+
+    const bytes = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(bytes);
+    const page = pdfDoc.getPages()[0];
+    const height = page.getHeight();
+
+    for (const b of boxes) {
+      if (!b.text) continue;
+
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      const r = parseInt(b.color.slice(1, 3), 16) / 255;
+      const g = parseInt(b.color.slice(3, 5), 16) / 255;
+      const bl = parseInt(b.color.slice(5, 7), 16) / 255;
+
+      page.drawText(b.text, {
+        x: b.x,
+        y: height - b.y,
+        size: b.size,
+        font,
+        color: rgb(r, g, bl),
+      });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+
+    const blob = new Blob([new Uint8Array(pdfBytes)], {
+      type: "application/pdf",
+    });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "edited.pdf";
+    a.click();
+  };
+
   return (
     <div style={{ height: "100vh", background: "#f3f4f6" }}>
-
+      
       {/* TOP BAR */}
       <div
         style={{
@@ -123,18 +167,34 @@ export default function Editor() {
       >
         <h2>⚡ EditZap Editor</h2>
 
-        <label
-          style={{
-            background: "black",
-            color: "#fff",
-            padding: "8px 15px",
-            borderRadius: 6,
-            cursor: "pointer",
-          }}
-        >
-          Upload PDF
-          <input type="file" hidden onChange={handleUpload} />
-        </label>
+        <div style={{ display: "flex", gap: 10 }}>
+          <label
+            style={{
+              background: "black",
+              color: "#fff",
+              padding: "8px 15px",
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+          >
+            Upload
+            <input type="file" hidden onChange={handleUpload} />
+          </label>
+
+          <button
+            onClick={exportPDF}
+            style={{
+              background: "#16a34a",
+              color: "#fff",
+              padding: "8px 15px",
+              borderRadius: 6,
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Export
+          </button>
+        </div>
       </div>
 
       {/* TOOLBAR */}
@@ -159,9 +219,7 @@ export default function Editor() {
           <input
             type="color"
             value={boxes[selected].color}
-            onChange={(e) =>
-              updateBox({ color: e.target.value })
-            }
+            onChange={(e) => updateBox({ color: e.target.value })}
           />
 
           <button onClick={() => updateBox({ bold: !boxes[selected].bold })}>
@@ -183,7 +241,6 @@ export default function Editor() {
               boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
             }}
           >
-            {/* PDF */}
             <iframe
               src={pdfUrl}
               width="100%"
@@ -191,7 +248,6 @@ export default function Editor() {
               style={{ position: "absolute", zIndex: 1 }}
             />
 
-            {/* INTERACTION */}
             <div
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -205,7 +261,6 @@ export default function Editor() {
               }}
             />
 
-            {/* DRAW PREVIEW */}
             {currentBox && (
               <div
                 style={{
@@ -220,7 +275,6 @@ export default function Editor() {
               />
             )}
 
-            {/* BOXES */}
             {boxes.map((b, i) => (
               <div
                 key={i}
