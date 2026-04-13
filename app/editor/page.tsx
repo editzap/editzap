@@ -14,6 +14,7 @@ type Box = {
 export default function Page() {
   const [tab, setTab] = useState<"edit" | "merge" | "split">("edit");
 
+  // EDIT STATES
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [boxes, setBoxes] = useState<Box[]>([]);
@@ -21,10 +22,11 @@ export default function Page() {
   const [start, setStart] = useState<any>(null);
   const [currentBox, setCurrentBox] = useState<Box | null>(null);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // MERGE / SPLIT
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
   const [splitFile, setSplitFile] = useState<File | null>(null);
-
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // ================= EDIT =================
 
@@ -38,14 +40,23 @@ export default function Page() {
   };
 
   const handleMouseDown = (e: any) => {
-    const rect = containerRef.current!.getBoundingClientRect();
+    if (!containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
 
     setStart({
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     });
 
-    setCurrentBox({ x: 0, y: 0, width: 0, height: 0, text: "" });
+    setCurrentBox({
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      text: "",
+    });
+
     setDrawing(true);
   };
 
@@ -109,7 +120,9 @@ export default function Page() {
     const bytes = await pdfDoc.save();
 
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([new Uint8Array(bytes)]));
+    a.href = URL.createObjectURL(
+      new Blob([new Uint8Array(bytes)], { type: "application/pdf" })
+    );
     a.download = "edited.pdf";
     a.click();
   };
@@ -130,7 +143,9 @@ export default function Page() {
     const bytes = await merged.save();
 
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([new Uint8Array(bytes)]));
+    a.href = URL.createObjectURL(
+      new Blob([new Uint8Array(bytes)], { type: "application/pdf" })
+    );
     a.download = "merged.pdf";
     a.click();
   };
@@ -150,38 +165,52 @@ export default function Page() {
       const bytes = await newPdf.save();
 
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([new Uint8Array(bytes)]));
+      a.href = URL.createObjectURL(
+        new Blob([new Uint8Array(bytes)], { type: "application/pdf" })
+      );
       a.download = `page-${i + 1}.pdf`;
       a.click();
     }
   };
 
+  // ================= UI =================
+
   return (
     <div style={{ display: "flex", height: "100vh", background: "#f3f4f6" }}>
       
       {/* SIDEBAR */}
-      <div style={{
-        width: 240,
-        background: "#fff",
-        borderRight: "1px solid #eee",
-        padding: 20
-      }}>
-        <h2 style={{ fontWeight: "bold" }}>⚡ EditZap</h2>
+      <div
+        style={{
+          width: 260,
+          background: "#ffffff",
+          borderRight: "1px solid #e5e7eb",
+          padding: 20,
+        }}
+      >
+        <h2 style={{ fontWeight: "bold", marginBottom: 30 }}>
+          ⚡ EditZap
+        </h2>
 
-        {["edit", "merge", "split"].map((t) => (
+        {[
+          { key: "edit", label: "Edit PDF" },
+          { key: "merge", label: "Merge PDF" },
+          { key: "split", label: "Split PDF" },
+        ].map((item) => (
           <div
-            key={t}
-            onClick={() => setTab(t as any)}
+            key={item.key}
+            onClick={() => setTab(item.key as any)}
             style={{
-              marginTop: 20,
-              padding: 10,
-              borderRadius: 8,
+              padding: "14px 16px",
+              borderRadius: 10,
+              marginBottom: 10,
               cursor: "pointer",
-              background: tab === t ? "#f1f5f9" : "transparent",
-              fontWeight: tab === t ? "bold" : "normal",
+              background:
+                tab === item.key ? "#111827" : "transparent",
+              color: tab === item.key ? "#fff" : "#111",
+              fontWeight: "bold",
             }}
           >
-            {t.toUpperCase()}
+            {item.label}
           </div>
         ))}
       </div>
@@ -189,31 +218,37 @@ export default function Page() {
       {/* MAIN */}
       <div style={{ flex: 1, padding: 40 }}>
 
-        <div style={{
-          background: "#fff",
-          padding: 30,
-          borderRadius: 12,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.05)"
-        }}>
+        <div
+          style={{
+            background: "#fff",
+            padding: 30,
+            borderRadius: 12,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+          }}
+        >
           
           {/* EDIT */}
           {tab === "edit" && (
             <>
               <h2>Edit PDF</h2>
 
-              <label style={{
-                display: "inline-block",
-                padding: "10px 20px",
-                background: "#111827",
-                color: "#fff",
-                borderRadius: 8,
-                cursor: "pointer"
-              }}>
+              <label
+                style={{
+                  padding: "10px 20px",
+                  background: "#111827",
+                  color: "#fff",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                }}
+              >
                 Upload PDF
                 <input type="file" hidden onChange={handleUpload} />
               </label>
 
-              <button onClick={exportPDF} style={{ marginLeft: 10 }}>
+              <button
+                onClick={exportPDF}
+                style={{ marginLeft: 10 }}
+              >
                 Export
               </button>
 
@@ -228,30 +263,39 @@ export default function Page() {
                   <iframe src={pdfUrl} width="100%" height="500px" />
 
                   {currentBox && (
-                    <div style={{
-                      position: "absolute",
-                      left: currentBox.x,
-                      top: currentBox.y,
-                      width: currentBox.width,
-                      height: currentBox.height,
-                      border: "2px dashed black"
-                    }} />
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: currentBox.x,
+                        top: currentBox.y,
+                        width: currentBox.width,
+                        height: currentBox.height,
+                        border: "2px dashed black",
+                      }}
+                    />
                   )}
 
                   {boxes.map((b, i) => (
-                    <div key={i} style={{
-                      position: "absolute",
-                      left: b.x,
-                      top: b.y,
-                      width: b.width,
-                      height: b.height,
-                      border: "1px solid black",
-                      background: "#fff"
-                    }}>
+                    <div
+                      key={i}
+                      style={{
+                        position: "absolute",
+                        left: b.x,
+                        top: b.y,
+                        width: b.width,
+                        height: b.height,
+                        border: "1px solid black",
+                        background: "#fff",
+                      }}
+                    >
                       <div
                         contentEditable
+                        suppressContentEditableWarning
                         onInput={(e) =>
-                          updateText(i, (e.target as HTMLDivElement).innerText)
+                          updateText(
+                            i,
+                            (e.target as HTMLDivElement).innerText
+                          )
                         }
                         style={{ padding: 5 }}
                       >
@@ -279,7 +323,10 @@ export default function Page() {
                 }
               />
 
-              <button onClick={mergePDFs} style={{ marginTop: 10 }}>
+              <button
+                onClick={mergePDFs}
+                style={{ marginTop: 10 }}
+              >
                 Merge & Download
               </button>
             </>
@@ -297,7 +344,10 @@ export default function Page() {
                 }
               />
 
-              <button onClick={splitPDF} style={{ marginTop: 10 }}>
+              <button
+                onClick={splitPDF}
+                style={{ marginTop: 10 }}
+              >
                 Split & Download
               </button>
             </>
