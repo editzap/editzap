@@ -1,11 +1,16 @@
+"use client";
+
 import "./globals.css";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
   return (
     <html lang="en">
       <body style={body}>
@@ -44,8 +49,10 @@ export default function RootLayout({
           </Link>
         </header>
 
-        {/* MAIN CONTENT (FIXED) */}
-        <main style={main}>{children}</main>
+        {/* MAIN (KEY FIX) */}
+        <main key={pathname} style={main}>
+          {children}
+        </main>
 
         {/* FOOTER */}
         <footer style={footer}>
@@ -126,7 +133,7 @@ const ctaBtn: React.CSSProperties = {
   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
 };
 
-/* MAIN (IMPORTANT FIX) */
+/* MAIN */
 const main: React.CSSProperties = {
   minHeight: "calc(100vh - 120px)",
 };
