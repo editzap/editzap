@@ -10,7 +10,7 @@ export default function Page() {
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [text, setText] = useState("");
 
-  // convert safely
+  // safe buffer conversion
   const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
     const ab = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(ab).set(bytes);
@@ -31,9 +31,12 @@ export default function Page() {
     }
   }, []);
 
-  // ── EDIT EXPORT ───────────────────────
+  // ───────── EDIT ─────────
   const exportPDF = async () => {
-    if (!pdfBytes) return;
+    if (!pdfBytes) {
+      alert("Upload a PDF first");
+      return;
+    }
 
     const pdf = await PDFDocument.load(pdfBytes);
     const font = await pdf.embedFont(StandardFonts.Helvetica);
@@ -52,8 +55,13 @@ export default function Page() {
     download(bytes, "edited.pdf");
   };
 
-  // ── MERGE ─────────────────────────────
+  // ───────── MERGE ─────────
   const mergePDFs = async (files: File[]) => {
+    if (files.length < 2) {
+      alert("Select at least 2 PDFs to merge");
+      return;
+    }
+
     const merged = await PDFDocument.create();
 
     for (const file of files) {
@@ -68,9 +76,12 @@ export default function Page() {
     download(result, "merged.pdf");
   };
 
-  // ── SPLIT ─────────────────────────────
+  // ───────── SPLIT ─────────
   const splitPDF = async () => {
-    if (!pdfBytes) return;
+    if (!pdfBytes) {
+      alert("No PDF loaded");
+      return;
+    }
 
     const pdf = await PDFDocument.load(pdfBytes);
 
@@ -84,7 +95,7 @@ export default function Page() {
     }
   };
 
-  // ── DOWNLOAD ──────────────────────────
+  // ───────── DOWNLOAD ─────────
   const download = (bytes: Uint8Array, name: string) => {
     const buffer = toArrayBuffer(bytes);
     const url = URL.createObjectURL(new Blob([buffer]));
@@ -93,12 +104,16 @@ export default function Page() {
     a.href = url;
     a.download = name;
     a.click();
+
+    URL.revokeObjectURL(url);
   };
 
+  // ───────── UI ─────────
   return (
     <div style={{ padding: 20 }}>
       <h2>{tool.toUpperCase()} TOOL</h2>
 
+      {/* EDIT */}
       {tool === "edit" && (
         <>
           <input
@@ -106,23 +121,32 @@ export default function Page() {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
+          <br />
           <button onClick={exportPDF}>Export PDF</button>
         </>
       )}
 
+      {/* MERGE */}
       {tool === "merge" && (
-        <input
-          type="file"
-          multiple
-          accept=".pdf"
-          onChange={(e) =>
-            mergePDFs(Array.from(e.target.files || []))
-          }
-        />
+        <>
+          <p>Select multiple PDFs:</p>
+          <input
+            type="file"
+            multiple
+            accept=".pdf"
+            onChange={(e) =>
+              mergePDFs(Array.from(e.target.files || []))
+            }
+          />
+        </>
       )}
 
+      {/* SPLIT */}
       {tool === "split" && (
-        <button onClick={splitPDF}>Split PDF</button>
+        <>
+          <p>Split current PDF into pages:</p>
+          <button onClick={splitPDF}>Split PDF</button>
+        </>
       )}
     </div>
   );
