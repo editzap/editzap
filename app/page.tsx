@@ -58,19 +58,19 @@ export default function Home() {
 
       {/* ACTION CARD */}
       <motion.div
-        whileHover={{ scale: 1.03 }}
+        whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.98 }}
         style={card}
         onClick={() => goToEditor(tab)}
       >
         <h3 style={{ marginBottom: 10 }}>
           {tab === "edit" && "✏ Edit your PDF"}
-          {tab === "merge" && "⊞ Merge PDFs"}
-          {tab === "split" && "✂ Split PDF"}
+          {tab === "merge" && "⊞ Merge multiple PDFs"}
+          {tab === "split" && "✂ Split PDF into pages"}
         </h3>
 
         <p style={cardText}>
-          Click to open {tab} tool
+          Open {tab} tool →
         </p>
       </motion.div>
 
@@ -150,7 +150,7 @@ const tabText = (active: boolean): React.CSSProperties => ({
 
 const card: React.CSSProperties = {
   marginTop: 20,
-  padding: 50,
+  padding: 60,
   borderRadius: 20,
   textAlign: "center",
   background: "linear-gradient(135deg, #fafafa, #f3f4f6)",
