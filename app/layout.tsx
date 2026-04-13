@@ -1,4 +1,5 @@
 import "./globals.css";
+import Link from "next/link";
 
 export default function RootLayout({
   children,
@@ -10,19 +11,37 @@ export default function RootLayout({
       <body style={body}>
         {/* HEADER */}
         <header style={header}>
-          <div style={logoWrap}>
-            <span style={logoIcon}>⚡</span>
-            <span style={logoText}>EditZap</span>
-          </div>
+          {/* LOGO */}
+          <Link href="/" style={linkReset}>
+            <div style={logoWrap}>
+              <span style={logoIcon}>⚡</span>
+              <span style={logoText}>EditZap</span>
+            </div>
+          </Link>
 
+          {/* NAV */}
           <nav style={navLinks}>
-            <span style={navItem}>Home</span>
-            <span style={navItem}>About</span>
-            <span style={navItem}>Privacy</span>
-            <span style={navItem}>Contact</span>
+            <Link href="/" style={linkReset}>
+              <span style={navItem}>Home</span>
+            </Link>
+
+            <Link href="/about" style={linkReset}>
+              <span style={navItem}>About</span>
+            </Link>
+
+            <Link href="/privacy" style={linkReset}>
+              <span style={navItem}>Privacy</span>
+            </Link>
+
+            <Link href="/contact" style={linkReset}>
+              <span style={navItem}>Contact</span>
+            </Link>
           </nav>
 
-          <button style={ctaBtn}>Start Editing</button>
+          {/* CTA */}
+          <Link href="/" style={linkReset}>
+            <button style={ctaBtn}>Start Editing</button>
+          </Link>
         </header>
 
         {/* PAGE CONTENT */}
@@ -75,6 +94,7 @@ const logoText: React.CSSProperties = {
   fontSize: 16,
 };
 
+/* NAV */
 const navLinks: React.CSSProperties = {
   display: "flex",
   gap: 22,
@@ -86,6 +106,13 @@ const navItem: React.CSSProperties = {
   color: "#444",
 };
 
+/* LINK RESET (IMPORTANT) */
+const linkReset: React.CSSProperties = {
+  textDecoration: "none",
+  display: "inline-block",
+};
+
+/* CTA */
 const ctaBtn: React.CSSProperties = {
   padding: "8px 16px",
   borderRadius: 999,
