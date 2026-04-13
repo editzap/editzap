@@ -34,6 +34,7 @@ export default function Editor() {
     setFile(f);
     setPdfUrl(URL.createObjectURL(f));
     setBoxes([]);
+    setSelected(null);
   };
 
   const handleClick = (e: any) => {
@@ -62,7 +63,7 @@ export default function Editor() {
     setBoxes(updated);
   };
 
-  // DRAG
+  // ===== DRAG =====
   const startDrag = (i: number, e: any) => {
     e.stopPropagation();
     dragRef.current = i;
@@ -73,21 +74,22 @@ export default function Editor() {
 
     const rect = containerRef.current.getBoundingClientRect();
 
-    const updated = [...boxes];
-    updated[dragRef.current] = {
-      ...updated[dragRef.current],
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-
-    setBoxes(updated);
+    setBoxes((prev) => {
+      const updated = [...prev];
+      updated[dragRef.current!] = {
+        ...updated[dragRef.current!],
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
+      return updated;
+    });
   };
 
   const stopDrag = () => {
     dragRef.current = null;
   };
 
-  // DELETE
+  // ===== DELETE KEY =====
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Delete" && selected !== null) {
@@ -100,7 +102,7 @@ export default function Editor() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selected]);
 
-  // EXPORT
+  // ===== EXPORT =====
   const exportPDF = async () => {
     if (!file) return;
 
@@ -139,15 +141,17 @@ export default function Editor() {
 
     const pdfBytes = await pdfDoc.save();
 
+    const blob = new Blob([new Uint8Array(pdfBytes)], {
+      type: "application/pdf",
+    });
+
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(
-      new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" })
-    );
+    a.href = URL.createObjectURL(blob);
     a.download = "edited.pdf";
     a.click();
   };
 
-  // MERGE
+  // ===== MERGE =====
   const handleMergeUpload = (e: any) => {
     setMergeFiles(Array.from(e.target.files || []));
   };
@@ -172,7 +176,7 @@ export default function Editor() {
     a.click();
   };
 
-  // SPLIT
+  // ===== SPLIT =====
   const handleSplitUpload = (e: any) => {
     setSplitFile(e.target.files[0]);
   };
@@ -230,7 +234,7 @@ export default function Editor() {
             <button onClick={exportPDF}>EXPORT</button>
 
             {selected !== null && (
-              <div>
+              <div style={{ marginTop: 10 }}>
                 <input
                   type="number"
                   value={boxes[selected].size}
@@ -257,7 +261,13 @@ export default function Editor() {
                 onMouseUp={stopDrag}
                 style={{ position: "relative", marginTop: 20 }}
               >
-                <iframe src={pdfUrl} width="100%" height="600px" />
+                {/* 🔥 FIXED IFRAME */}
+                <iframe
+                  src={pdfUrl}
+                  width="100%"
+                  height="600px"
+                  style={{ pointerEvents: "none" }}
+                />
 
                 {boxes.map((b, i) => (
                   <div
@@ -271,9 +281,11 @@ export default function Editor() {
                     onInput={(e) => {
                       const val = (e.target as HTMLDivElement).innerText;
 
-                      const updated = [...boxes];
-                      updated[i].text = val;
-                      setBoxes(updated);
+                      setBoxes((prev) => {
+                        const updated = [...prev];
+                        updated[i].text = val;
+                        return updated;
+                      });
                     }}
                     onMouseDown={(e) => startDrag(i, e)}
                     style={{
