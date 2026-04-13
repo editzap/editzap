@@ -45,15 +45,19 @@ export default function Home() {
     <div style={container}>
       {/* HEADER */}
       <div style={header}>
-        <div style={logo}>⚡ EditZap</div>
-
-        <div style={navLinks}>
-          <span style={navItem}>Tools</span>
-          <span style={navItem}>Features</span>
-          <span style={navItem}>About</span>
+        <div style={logoWrap}>
+          <span style={logoIcon}>⚡</span>
+          <span style={logoText}>EditZap</span>
         </div>
 
-        <button style={ctaBtn}>Get Started</button>
+        <div style={navLinks}>
+          <span style={navItem}>Home</span>
+          <span style={navItem}>About</span>
+          <span style={navItem}>Privacy</span>
+          <span style={navItem}>Contact</span>
+        </div>
+
+        <button style={ctaBtn}>Start Editing</button>
       </div>
 
       {/* HERO */}
@@ -118,24 +122,18 @@ export default function Home() {
 
       {/* FOOTER */}
       <div style={footer}>
-        <div style={footerTop}>
-          <div>
-            <h3>⚡ EditZap</h3>
-            <p style={footerText}>
-              Fast, private and simple PDF tools — built for everyday use.
-            </p>
-          </div>
+        <div style={footerInner}>
+          <div style={footerBrand}>⚡ EditZap</div>
 
           <div style={footerLinks}>
             <span>Home</span>
-            <span>Tools</span>
             <span>Privacy</span>
             <span>Contact</span>
           </div>
         </div>
 
         <div style={footerBottom}>
-          © {new Date().getFullYear()} EditZap. All rights reserved.
+          © {new Date().getFullYear()} EditZap · Crafted for fast, private PDF editing
         </div>
       </div>
     </div>
@@ -151,39 +149,59 @@ const container: React.CSSProperties = {
   fontFamily: "system-ui",
 };
 
+/* HEADER */
 const header: React.CSSProperties = {
+  position: "sticky",
+  top: 0,
+  zIndex: 10,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "14px 20px",
-  borderBottom: "1px solid #eee",
-  marginBottom: 20,
+  padding: "14px 24px",
+  marginBottom: 30,
+  backdropFilter: "blur(10px)",
+  background: "rgba(255,255,255,0.7)",
+  borderBottom: "1px solid rgba(0,0,0,0.05)",
 };
 
-const logo: React.CSSProperties = {
-  fontWeight: 700,
+const logoWrap: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  fontWeight: 600,
+};
+
+const logoIcon: React.CSSProperties = {
   fontSize: 18,
+};
+
+const logoText: React.CSSProperties = {
+  fontSize: 16,
 };
 
 const navLinks: React.CSSProperties = {
   display: "flex",
-  gap: 20,
+  gap: 22,
+  fontSize: 14,
 };
 
 const navItem: React.CSSProperties = {
   cursor: "pointer",
-  color: "#555",
+  color: "#444",
 };
 
 const ctaBtn: React.CSSProperties = {
-  padding: "8px 14px",
+  padding: "8px 16px",
+  borderRadius: 999,
   background: "#111",
   color: "#fff",
-  borderRadius: 8,
-  cursor: "pointer",
+  fontSize: 13,
   border: "none",
+  cursor: "pointer",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
 };
 
+/* HERO */
 const hero: React.CSSProperties = {
   textAlign: "center",
   marginBottom: 30,
@@ -198,6 +216,7 @@ const subtitle: React.CSSProperties = {
   color: "#666",
 };
 
+/* TABS */
 const tabsWrapper: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
@@ -233,6 +252,7 @@ const tabText = (active: boolean): React.CSSProperties => ({
   fontWeight: 500,
 });
 
+/* TOOL CARDS */
 const toolsGrid: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
@@ -262,6 +282,7 @@ const cardText: React.CSSProperties = {
   color: "#666",
 };
 
+/* FEATURES */
 const features: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
@@ -277,33 +298,35 @@ const featureCard: React.CSSProperties = {
   boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
 };
 
+/* FOOTER */
 const footer: React.CSSProperties = {
   marginTop: 80,
   paddingTop: 30,
-  borderTop: "1px solid #eee",
+  borderTop: "1px solid rgba(0,0,0,0.06)",
 };
 
-const footerTop: React.CSSProperties = {
+const footerInner: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
-  flexWrap: "wrap",
-  gap: 20,
+  alignItems: "center",
+  marginBottom: 20,
+};
+
+const footerBrand: React.CSSProperties = {
+  fontWeight: 600,
+  fontSize: 14,
 };
 
 const footerLinks: React.CSSProperties = {
   display: "flex",
-  gap: 16,
+  gap: 18,
+  fontSize: 13,
   color: "#555",
   cursor: "pointer",
 };
 
 const footerBottom: React.CSSProperties = {
-  marginTop: 20,
+  textAlign: "center",
   fontSize: 12,
   color: "#888",
-};
-
-const footerText: React.CSSProperties = {
-  color: "#666",
-  maxWidth: 300,
 };
