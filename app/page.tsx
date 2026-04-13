@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 type Tab = "edit" | "merge" | "split";
 
@@ -11,30 +12,30 @@ export default function Home() {
 
   const handleFile = (file: File) => {
     const reader = new FileReader();
-
     reader.onload = () => {
       sessionStorage.setItem("pdfFile", reader.result as string);
       sessionStorage.setItem("tool", tab);
       router.push("/editor");
     };
-
     reader.readAsDataURL(file);
   };
 
   return (
     <div style={container}>
       {/* NAV */}
-      <div style={nav}>
-        <h2>⚡ EditZap</h2>
-      </div>
+      <motion.h2 initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        ⚡ EditZap
+      </motion.h2>
 
       {/* HERO */}
-      <div style={hero}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={hero}
+      >
         <h1 style={title}>Edit PDFs in Seconds</h1>
-        <p style={subtitle}>
-          Fast. Private. No uploads. Just clean tools.
-        </p>
-      </div>
+        <p style={subtitle}>Fast. Private. Beautiful.</p>
+      </motion.div>
 
       {/* TABS */}
       <div style={tabsWrapper}>
@@ -43,19 +44,26 @@ export default function Home() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              style={{
-                ...tabBtn,
-                ...(tab === t ? activeTab : {}),
-              }}
+              style={tabBtn}
             >
-              {t.toUpperCase()}
+              {tab === t && (
+                <motion.div
+                  layoutId="active-pill"
+                  style={activePill}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                />
+              )}
+              <span style={tabText(tab === t)}>{t.toUpperCase()}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* DROP ZONE */}
-      <div style={dropZone}>
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        style={dropZone}
+      >
         <h3>{tab.toUpperCase()} PDF</h3>
 
         <label style={primaryBtn}>
@@ -71,38 +79,31 @@ export default function Home() {
         </label>
 
         <p style={dropText}>or drag & drop</p>
-      </div>
+      </motion.div>
 
       {/* FEATURES */}
       <div style={features}>
-        <Feature title="⚡ Fast" text="Instant processing" />
-        <Feature title="🔒 Private" text="No uploads" />
-        <Feature title="✨ Simple" text="Clean experience" />
+        {["⚡ Fast", "🔒 Private", "✨ Clean"].map((f, i) => (
+          <motion.div
+            key={i}
+            whileHover={{ y: -5 }}
+            style={featureCard}
+          >
+            {f}
+          </motion.div>
+        ))}
       </div>
     </div>
   );
 }
 
-// COMPONENT
-function Feature({ title, text }: { title: string; text: string }) {
-  return (
-    <div style={featureCard}>
-      <div style={{ fontSize: 20 }}>{title}</div>
-      <p style={{ color: "#666", fontSize: 14 }}>{text}</p>
-    </div>
-  );
-}
+/* STYLES */
 
-// STYLES
 const container: React.CSSProperties = {
   padding: 40,
   maxWidth: 1000,
   margin: "auto",
   fontFamily: "system-ui",
-};
-
-const nav: React.CSSProperties = {
-  marginBottom: 20,
 };
 
 const hero: React.CSSProperties = {
@@ -111,8 +112,8 @@ const hero: React.CSSProperties = {
 };
 
 const title: React.CSSProperties = {
-  fontSize: 42,
-  marginBottom: 10,
+  fontSize: 44,
+  fontWeight: 700,
 };
 
 const subtitle: React.CSSProperties = {
@@ -130,44 +131,52 @@ const tabs: React.CSSProperties = {
   background: "#f3f4f6",
   padding: 6,
   borderRadius: 999,
-  gap: 6,
+  position: "relative",
 };
 
 const tabBtn: React.CSSProperties = {
-  padding: "8px 18px",
-  borderRadius: 999,
+  position: "relative",
+  padding: "10px 20px",
   border: "none",
   background: "transparent",
   cursor: "pointer",
-  transition: "all 0.25s ease",
 };
 
-const activeTab: React.CSSProperties = {
-  background: "#111",
-  color: "#fff",
-  transform: "scale(1.05)",
+const activePill: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  borderRadius: 999,
+  background: "linear-gradient(135deg, #111, #333)",
 };
+
+const tabText = (active: boolean): React.CSSProperties => ({
+  position: "relative",
+  zIndex: 1,
+  color: active ? "#fff" : "#333",
+  fontWeight: 500,
+});
 
 const dropZone: React.CSSProperties = {
-  border: "2px dashed #aaa",
-  padding: 50,
-  borderRadius: 16,
+  borderRadius: 20,
+  padding: 60,
   textAlign: "center",
-  transition: "all 0.3s ease",
+  background: "linear-gradient(135deg, #fafafa, #f3f4f6)",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+};
+
+const primaryBtn: React.CSSProperties = {
+  padding: "12px 26px",
+  background: "#111",
+  color: "#fff",
+  borderRadius: 12,
+  cursor: "pointer",
+  marginTop: 10,
+  display: "inline-block",
 };
 
 const dropText: React.CSSProperties = {
   marginTop: 10,
-  color: "#666",
-};
-
-const primaryBtn: React.CSSProperties = {
-  padding: "12px 24px",
-  background: "#111",
-  color: "#fff",
-  borderRadius: 10,
-  cursor: "pointer",
-  marginTop: 10,
+  color: "#777",
 };
 
 const features: React.CSSProperties = {
@@ -178,8 +187,8 @@ const features: React.CSSProperties = {
 };
 
 const featureCard: React.CSSProperties = {
-  padding: 16,
-  borderRadius: 12,
-  boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
-  transition: "transform 0.2s ease",
+  padding: 20,
+  borderRadius: 14,
+  background: "#fff",
+  boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
 };
