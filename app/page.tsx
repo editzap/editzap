@@ -13,13 +13,13 @@ type Box = {
 };
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"edit" | "merge" | "split">("edit");
+  const [tool, setTool] = useState<"edit" | "merge" | "split">("edit");
 
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [boxes, setBoxes] = useState<Box[]>([]);
-  const [history, setHistory] = useState<Box[][]>([]);
   const [selected, setSelected] = useState<number | null>(null);
+  const [history, setHistory] = useState<Box[][]>([]);
 
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
   const [splitFile, setSplitFile] = useState<File | null>(null);
@@ -27,18 +27,17 @@ export default function Home() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<number | null>(null);
 
-  // ===== HISTORY =====
   const saveHistory = (newBoxes: Box[]) => {
     setHistory((prev) => [...prev, boxes]);
     setBoxes(newBoxes);
   };
 
-  // ===== UNDO =====
+  // UNDO + DELETE
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "z") {
         setHistory((prev) => {
-          if (prev.length === 0) return prev;
+          if (!prev.length) return prev;
           const last = prev[prev.length - 1];
           setBoxes(last);
           return prev.slice(0, -1);
@@ -46,8 +45,7 @@ export default function Home() {
       }
 
       if (e.key === "Delete" && selected !== null) {
-        const updated = boxes.filter((_, i) => i !== selected);
-        saveHistory(updated);
+        saveHistory(boxes.filter((_, i) => i !== selected));
         setSelected(null);
       }
     };
@@ -71,19 +69,27 @@ export default function Home() {
 
     const rect = containerRef.current.getBoundingClientRect();
 
-    const newBox: Box = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      text: "",
-      size: 16,
-      color: "#000000",
-      font: "Helvetica",
-    };
-
-    saveHistory([...boxes, newBox]);
+    saveHistory([
+      ...boxes,
+      {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        text: "",
+        size: 16,
+        color: "#000",
+        font: "Helvetica",
+      },
+    ]);
   };
 
-  // ===== DRAG =====
+  const updateBox = (changes: Partial<Box>) => {
+    if (selected === null) return;
+
+    const updated = [...boxes];
+    updated[selected] = { ...updated[selected], ...changes };
+    saveHistory(updated);
+  };
+
   const startDrag = (i: number, e: any) => {
     e.stopPropagation();
     dragRef.current = i;
@@ -108,15 +114,6 @@ export default function Home() {
     dragRef.current = null;
   };
 
-  const updateBox = (changes: Partial<Box>) => {
-    if (selected === null) return;
-
-    const updated = [...boxes];
-    updated[selected] = { ...updated[selected], ...changes };
-    saveHistory(updated);
-  };
-
-  // ===== EXPORT =====
   const exportPDF = async () => {
     if (!file) return;
 
@@ -169,8 +166,6 @@ export default function Home() {
   };
 
   const mergePDFs = async () => {
-    if (mergeFiles.length < 2) return alert("Select 2 PDFs");
-
     const merged = await PDFDocument.create();
 
     for (const f of mergeFiles) {
@@ -218,48 +213,40 @@ export default function Home() {
   };
 
   return (
-    <div style={{ background: "#f5f5f5", minHeight: "100vh", padding: 30 }}>
+    <div style={{ display: "flex", height: "100vh" }}>
       
-      <h1 style={{ textAlign: "center" }}>⚡ EditZap</h1>
+      {/* SIDEBAR */}
+      <div
+        style={{
+          width: 200,
+          background: "#111",
+          color: "#fff",
+          padding: 20,
+        }}
+      >
+        <h2>⚡ EditZap</h2>
 
-      {/* TABS */}
-      <div style={{ textAlign: "center", marginTop: 20 }}>
-        {["edit", "merge", "split"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
+        {["edit", "merge", "split"].map((t) => (
+          <div
+            key={t}
+            onClick={() => setTool(t as any)}
             style={{
-              margin: 5,
-              padding: "10px 20px",
-              borderRadius: 20,
-              background: activeTab === tab ? "#000" : "#ddd",
-              color: activeTab === tab ? "#fff" : "#000",
-              border: "none",
-              fontWeight: "bold",
+              marginTop: 20,
+              cursor: "pointer",
+              fontWeight: tool === t ? "bold" : "normal",
             }}
           >
-            {tab.toUpperCase()}
-          </button>
+            {t.toUpperCase()}
+          </div>
         ))}
       </div>
 
-      {/* CARD */}
-      <div
-        style={{
-          maxWidth: 900,
-          margin: "30px auto",
-          background: "#fff",
-          padding: 30,
-          borderRadius: 16,
-        }}
-      >
-        {activeTab === "edit" && (
+      {/* MAIN */}
+      <div style={{ flex: 1, padding: 20 }}>
+
+        {tool === "edit" && (
           <>
-            <h2>Edit PDF</h2>
-
-            <input type="file" onChange={handleUpload} />
-            <br /><br />
-
+            {/* TOP BAR */}
             {selected !== null && (
               <div style={{ marginBottom: 10 }}>
                 <input
@@ -269,7 +256,6 @@ export default function Home() {
                     updateBox({ size: parseInt(e.target.value) || 16 })
                   }
                 />
-
                 <input
                   type="color"
                   value={boxes[selected].color}
@@ -277,7 +263,6 @@ export default function Home() {
                     updateBox({ color: e.target.value })
                   }
                 />
-
                 <select
                   onChange={(e) =>
                     updateBox({ font: e.target.value })
@@ -287,13 +272,13 @@ export default function Home() {
                   <option value="Courier">Courier</option>
                   <option value="Times">Times</option>
                 </select>
-
                 <button onClick={() => updateBox({ text: "" })}>
                   Clear
                 </button>
               </div>
             )}
 
+            <input type="file" onChange={handleUpload} />
             <button onClick={exportPDF}>EXPORT</button>
 
             {pdfUrl && (
@@ -304,7 +289,7 @@ export default function Home() {
                 onMouseUp={stopDrag}
                 style={{ position: "relative", marginTop: 20 }}
               >
-                <iframe src={pdfUrl} width="100%" height="500px" />
+                <iframe src={pdfUrl} width="100%" height="600px" />
 
                 {boxes.map((b, i) => (
                   <div
@@ -347,17 +332,15 @@ export default function Home() {
           </>
         )}
 
-        {activeTab === "merge" && (
+        {tool === "merge" && (
           <>
-            <h2>Merge</h2>
             <input type="file" multiple onChange={handleMergeUpload} />
             <button onClick={mergePDFs}>MERGE</button>
           </>
         )}
 
-        {activeTab === "split" && (
+        {tool === "split" && (
           <>
-            <h2>Split</h2>
             <input type="file" onChange={handleSplitUpload} />
             <button onClick={splitPDF}>SPLIT</button>
           </>
