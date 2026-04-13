@@ -15,102 +15,125 @@ export default function Home() {
       <div style={hero}>
         <h1 style={title}>⚡ EditZap</h1>
         <p style={subtitle}>
-          Fast, clean PDF tools — no login, no waiting.
+          Edit, merge, and split PDFs — instantly, privately, beautifully.
         </p>
       </div>
 
       {/* TABS */}
       <div style={tabsWrapper}>
         <div style={tabs}>
-          {["edit", "merge", "split"].map((t) => (
+          {tabsList.map((t) => (
             <button
-              key={t}
-              onClick={() => setTab(t as Tab)}
-              style={tab === t ? activeTab : tabStyle}
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                ...tabStyle,
+                ...(tab === t.id ? activeTab : {}),
+              }}
             >
-              {t === "edit" && "✏ Edit"}
-              {t === "merge" && "⊞ Merge"}
-              {t === "split" && "✂ Split"}
+              <span style={{ marginRight: 6 }}>{t.icon}</span>
+              {t.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* CONTENT CARD */}
-      <div style={card}>
-        {tab === "edit" && (
-          <>
-            <h2 style={cardTitle}>Edit PDF</h2>
-            <p style={cardText}>
-              Add text, draw, and customize your PDF with precision.
-            </p>
+      {/* CONTENT */}
+      <div style={grid}>
+        {tabsList.map((t) => (
+          <div
+            key={t.id}
+            style={{
+              ...card,
+              transform: tab === t.id ? "scale(1.02)" : "scale(1)",
+              border:
+                tab === t.id
+                  ? "1px solid #111"
+                  : "1px solid rgba(0,0,0,0.06)",
+              opacity: tab === t.id ? 1 : 0.7,
+            }}
+            onClick={() => setTab(t.id)}
+          >
+            <div style={cardIcon}>{t.icon}</div>
+            <h3>{t.title}</h3>
+            <p style={cardText}>{t.desc}</p>
 
-            <button style={primaryBtn} onClick={() => router.push("/editor")}>
-              Start Editing →
-            </button>
-          </>
-        )}
-
-        {tab === "merge" && (
-          <>
-            <h2 style={cardTitle}>Merge PDFs</h2>
-            <p style={cardText}>
-              Combine multiple PDF files into one seamless document.
-            </p>
-
-            <button style={primaryBtn} onClick={() => router.push("/editor")}>
-              Merge Files →
-            </button>
-          </>
-        )}
-
-        {tab === "split" && (
-          <>
-            <h2 style={cardTitle}>Split PDF</h2>
-            <p style={cardText}>
-              Extract pages or split your PDF into separate files instantly.
-            </p>
-
-            <button style={primaryBtn} onClick={() => router.push("/editor")}>
-              Split PDF →
-            </button>
-          </>
-        )}
+            {tab === t.id && (
+              <button
+                style={primaryBtn}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push("/editor");
+                }}
+              >
+                {t.cta} →
+              </button>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* FEATURES */}
       <div style={features}>
-        <Feature title="⚡ Fast" text="Instant processing in your browser" />
-        <Feature title="🔒 Secure" text="No uploads, your files stay local" />
-        <Feature title="✨ Simple" text="Clean and easy-to-use interface" />
+        <Feature title="⚡ Instant" text="No uploads, runs in your browser" />
+        <Feature title="🔒 Private" text="Files never leave your device" />
+        <Feature title="✨ Smooth" text="Clean and distraction-free experience" />
       </div>
 
       {/* SEO */}
       <div style={seo}>
-        <h3>Free Online PDF Tools</h3>
+        <h3>Free Online PDF Editor</h3>
         <p>
-          EditZap lets you edit, merge, and split PDFs directly in your browser.
-          No signups, no delays — just fast and secure PDF tools.
+          EditZap is a fast, secure PDF editor that lets you edit, merge,
+          and split PDFs directly in your browser without uploads.
         </p>
       </div>
     </div>
   );
 }
 
-// ── COMPONENT ─────────────────────────────
+// ── DATA ─────────────────────────────────
+const tabsList = [
+  {
+    id: "edit" as Tab,
+    label: "Edit",
+    icon: "✏",
+    title: "Edit PDF",
+    desc: "Add text, draw, and customize your PDF precisely.",
+    cta: "Start Editing",
+  },
+  {
+    id: "merge" as Tab,
+    label: "Merge",
+    icon: "⊞",
+    title: "Merge PDFs",
+    desc: "Combine multiple PDF files into one seamless document.",
+    cta: "Merge Files",
+  },
+  {
+    id: "split" as Tab,
+    label: "Split",
+    icon: "✂",
+    title: "Split PDF",
+    desc: "Extract pages or split PDFs instantly.",
+    cta: "Split PDF",
+  },
+];
+
+// ── COMPONENT ────────────────────────────
 function Feature({ title, text }: { title: string; text: string }) {
   return (
     <div style={featureCard}>
-      <div style={{ fontSize: 22 }}>{title}</div>
-      <p style={{ color: "#666", fontSize: 14 }}>{text}</p>
+      <div style={{ fontSize: 20 }}>{title}</div>
+      <p style={{ fontSize: 13, color: "#666" }}>{text}</p>
     </div>
   );
 }
 
-// ── STYLES ────────────────────────────────
+// ── STYLES ───────────────────────────────
 const container: React.CSSProperties = {
   padding: 40,
-  maxWidth: 900,
+  maxWidth: 1000,
   margin: "auto",
   fontFamily: "system-ui",
 };
@@ -121,7 +144,7 @@ const hero: React.CSSProperties = {
 };
 
 const title: React.CSSProperties = {
-  fontSize: 42,
+  fontSize: 44,
   marginBottom: 10,
 };
 
@@ -133,78 +156,86 @@ const subtitle: React.CSSProperties = {
 const tabsWrapper: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
-  marginBottom: 20,
+  marginBottom: 30,
 };
 
 const tabs: React.CSSProperties = {
   display: "flex",
   background: "#f3f4f6",
   padding: 6,
-  borderRadius: 12,
+  borderRadius: 14,
   gap: 6,
 };
 
 const tabStyle: React.CSSProperties = {
-  padding: "8px 16px",
+  padding: "8px 18px",
   borderRadius: 10,
   border: "none",
   background: "transparent",
   cursor: "pointer",
   fontSize: 14,
+  transition: "all 0.2s ease",
 };
 
 const activeTab: React.CSSProperties = {
-  ...tabStyle,
   background: "#111",
   color: "#fff",
 };
 
+const grid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+  gap: 20,
+};
+
 const card: React.CSSProperties = {
   background: "#fff",
-  padding: 30,
+  padding: 24,
   borderRadius: 16,
-  boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+  cursor: "pointer",
+  transition: "all 0.25s ease",
   textAlign: "center",
 };
 
-const cardTitle: React.CSSProperties = {
-  fontSize: 22,
+const cardIcon: React.CSSProperties = {
+  fontSize: 28,
   marginBottom: 10,
 };
 
 const cardText: React.CSSProperties = {
   color: "#666",
-  marginBottom: 20,
+  fontSize: 14,
+  marginBottom: 16,
 };
 
 const primaryBtn: React.CSSProperties = {
-  padding: "10px 20px",
+  padding: "10px 18px",
   background: "#111",
   color: "#fff",
   border: "none",
   borderRadius: 10,
   cursor: "pointer",
-  fontSize: 14,
 };
 
 const features: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
   gap: 20,
-  marginTop: 40,
+  marginTop: 50,
   flexWrap: "wrap",
 };
 
 const featureCard: React.CSSProperties = {
   background: "#fff",
-  padding: 16,
+  padding: 14,
   borderRadius: 12,
   boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   width: 180,
 };
 
 const seo: React.CSSProperties = {
-  marginTop: 50,
+  marginTop: 60,
   textAlign: "center",
   color: "#666",
   fontSize: 14,
