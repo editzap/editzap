@@ -26,7 +26,7 @@ export default function Editor() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<number | null>(null);
 
-  // ===== EDIT =====
+  // ===== UPLOAD =====
   const handleUpload = (e: any) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -37,6 +37,7 @@ export default function Editor() {
     setSelected(null);
   };
 
+  // ===== CREATE BOX =====
   const handleClick = (e: any) => {
     if (!containerRef.current) return;
 
@@ -55,12 +56,15 @@ export default function Editor() {
     ]);
   };
 
+  // ===== UPDATE =====
   const updateBox = (changes: Partial<Box>) => {
     if (selected === null) return;
 
-    const updated = [...boxes];
-    updated[selected] = { ...updated[selected], ...changes };
-    setBoxes(updated);
+    setBoxes((prev) => {
+      const updated = [...prev];
+      updated[selected] = { ...updated[selected], ...changes };
+      return updated;
+    });
   };
 
   // ===== DRAG =====
@@ -89,7 +93,7 @@ export default function Editor() {
     dragRef.current = null;
   };
 
-  // ===== DELETE KEY =====
+  // ===== DELETE =====
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Delete" && selected !== null) {
@@ -207,7 +211,7 @@ export default function Editor() {
     <div style={{ display: "flex", height: "100vh" }}>
       
       {/* SIDEBAR */}
-      <div style={{ width: 240, background: "#0f172a", color: "#fff", padding: 20 }}>
+      <div style={{ width: 220, background: "#0f172a", color: "#fff", padding: 20 }}>
         <h2>⚡ EditZap</h2>
 
         {["edit", "merge", "split"].map((t) => (
@@ -242,7 +246,6 @@ export default function Editor() {
                     updateBox({ size: parseInt(e.target.value) || 16 })
                   }
                 />
-
                 <input
                   type="color"
                   value={boxes[selected].color}
@@ -256,19 +259,27 @@ export default function Editor() {
             {pdfUrl && (
               <div
                 ref={containerRef}
-                onClick={handleClick}
-                onMouseMove={move}
-                onMouseUp={stopDrag}
                 style={{ position: "relative", marginTop: 20 }}
               >
-                {/* 🔥 FIXED IFRAME */}
-                <iframe
-                  src={pdfUrl}
-                  width="100%"
-                  height="600px"
-                  style={{ pointerEvents: "none" }}
+                {/* PDF */}
+                <iframe src={pdfUrl} width="100%" height="600px" />
+
+                {/* CLICK LAYER */}
+                <div
+                  onClick={handleClick}
+                  onMouseMove={move}
+                  onMouseUp={stopDrag}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    zIndex: 5,
+                  }}
                 />
 
+                {/* TEXT BOXES */}
                 {boxes.map((b, i) => (
                   <div
                     key={i}
@@ -301,6 +312,7 @@ export default function Editor() {
                       background: "#fff",
                       padding: 4,
                       cursor: "move",
+                      zIndex: 10,
                     }}
                   >
                     {b.text || "Type"}
