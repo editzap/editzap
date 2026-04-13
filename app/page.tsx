@@ -14,7 +14,7 @@ export default function Home() {
         fontFamily: "Arial",
       }}
     >
-      {/* NAVBAR */}
+      {/* NAVBAR (ONLY ONE) */}
       <div
         style={{
           display: "flex",
@@ -27,6 +27,7 @@ export default function Home() {
         <h2 style={{ fontWeight: "bold" }}>⚡ EditZap</h2>
 
         <div style={{ display: "flex", gap: 20 }}>
+          <Link href="/">Home</Link>
           <Link href="/about">About</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/contact">Contact</Link>
@@ -37,15 +38,15 @@ export default function Home() {
       <div
         style={{
           textAlign: "center",
-          padding: "100px 20px",
+          padding: "120px 20px",
         }}
       >
-        <h1 style={{ fontSize: 42, fontWeight: "bold" }}>
-          Simple PDF Tools. One Click Away.
+        <h1 style={{ fontSize: 44, fontWeight: "bold" }}>
+          All-in-One PDF Editor Online
         </h1>
 
-        <p style={{ marginTop: 20, color: "#555" }}>
-          Edit, merge and split PDFs instantly — free & secure.
+        <p style={{ marginTop: 20, color: "#555", fontSize: 18 }}>
+          Edit, merge and split PDFs instantly — no signup needed.
         </p>
 
         <Link href="/editor">
@@ -63,12 +64,12 @@ export default function Home() {
               boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
             }}
           >
-            Go to Editor
+            Start Editing PDF
           </button>
         </Link>
       </div>
 
-      {/* INFO SECTION (SEO + ADSENSE SAFE) */}
+      {/* SEO / INFO */}
       <div
         style={{
           maxWidth: 900,
@@ -79,13 +80,13 @@ export default function Home() {
         }}
       >
         <p>
-          EditZap is a free online PDF tool that allows you to edit PDFs,
-          merge multiple files, and split documents easily. No installation
-          or signup required.
+          EditZap is a free online PDF editor that allows you to add text,
+          merge multiple PDFs, and split documents instantly. All processing
+          happens in your browser — no uploads, no data storage.
         </p>
       </div>
 
-      {/* FOOTER */}
+      {/* FOOTER (ONLY ONE) */}
       <div
         style={{
           textAlign: "center",
