@@ -1,37 +1,16 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
+import React, { useState, useEffect } from "react";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-type Tool = "text" | "draw" | null;
-
-interface Annotation {
-  id: string;
-  type: Tool;
-  page: number;
-  x: number;
-  y: number;
-  text?: string;
-  path?: { x: number; y: number }[];
-}
+type Tool = "edit" | "merge" | "split";
 
 export default function Page() {
+  const [tool, setTool] = useState<Tool>("edit");
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
-  const [pageCount, setPageCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [text, setText] = useState("");
 
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [activeTool, setActiveTool] = useState<Tool>(null);
-
-  const [pendingPos, setPendingPos] = useState<{ x: number; y: number } | null>(null);
-  const [textValue, setTextValue] = useState("");
-
-  const [drawing, setDrawing] = useState(false);
-  const [livePath, setLivePath] = useState<{ x: number; y: number }[]>([]);
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const overlayRef = useRef<HTMLCanvasElement | null>(null);
-
+  // convert safely
   const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
     const ab = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(ab).set(bytes);
@@ -41,131 +20,109 @@ export default function Page() {
   // load from homepage
   useEffect(() => {
     const stored = sessionStorage.getItem("pdfFile");
-    if (!stored) return;
+    const storedTool = sessionStorage.getItem("tool") as Tool | null;
 
-    fetch(stored)
-      .then((res) => res.arrayBuffer())
-      .then((buf) => setPdfBytes(buf));
+    if (storedTool) setTool(storedTool);
+
+    if (stored) {
+      fetch(stored)
+        .then((res) => res.arrayBuffer())
+        .then((buf) => setPdfBytes(buf));
+    }
   }, []);
 
-  // render
-  const renderPage = useCallback(async (doc: any, pageNum: number) => {
-    if (!canvasRef.current || !overlayRef.current) return;
-
-    const page = await doc.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 1.5 });
-
-    const canvas = canvasRef.current;
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    await page.render({ canvasContext: ctx, viewport }).promise;
-
-    const ov = overlayRef.current;
-    ov.width = viewport.width;
-    ov.height = viewport.height;
-  }, []);
-
-  useEffect(() => {
+  // ── EDIT EXPORT ───────────────────────
+  const exportPDF = async () => {
     if (!pdfBytes) return;
 
-    (async () => {
-      const pdfjs = await import("pdfjs-dist");
-      const { getDocument, GlobalWorkerOptions } = pdfjs as any;
+    const pdf = await PDFDocument.load(pdfBytes);
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
 
-      GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const page = pdf.getPages()[0];
 
-      const doc = await getDocument({ data: pdfBytes }).promise;
-      setPageCount(doc.numPages);
-      renderPage(doc, currentPage);
-    })();
-  }, [pdfBytes, currentPage, renderPage]);
-
-  const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = overlayRef.current!.getBoundingClientRect();
-    return {
-      x: ((e.clientX - rect.left) * overlayRef.current!.width) / rect.width,
-      y: ((e.clientY - rect.top) * overlayRef.current!.height) / rect.height,
-    };
-  };
-
-  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (activeTool !== "text") return;
-    setPendingPos(getPos(e));
-  };
-
-  const commitText = () => {
-    if (!pendingPos || !textValue.trim()) return;
-
-    setAnnotations((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), type: "text", page: currentPage, x: pendingPos.x, y: pendingPos.y, text: textValue },
-    ]);
-
-    setTextValue("");
-    setPendingPos(null);
-  };
-
-  const exportPDF = async () => {
-    if (!pdfBytes || !overlayRef.current) return;
-
-    const doc = await PDFDocument.load(pdfBytes);
-    const font = await doc.embedFont(StandardFonts.Helvetica);
-
-    const page = doc.getPage(currentPage - 1);
-    const { height, width } = page.getSize();
-
-    const rect = overlayRef.current.getBoundingClientRect();
-    const scaleX = width / rect.width;
-    const scaleY = height / rect.height;
-
-    annotations.forEach((a) => {
-      if (a.type !== "text" || !a.text) return;
-
-      page.drawText(a.text, {
-        x: a.x * scaleX,
-        y: height - a.y * scaleY,
-        size: 14,
-        font,
-        color: rgb(0, 0, 0),
-      });
+    page.drawText(text || "Sample Text", {
+      x: 50,
+      y: 500,
+      size: 20,
+      font,
+      color: rgb(0, 0, 0),
     });
 
-    const bytes = await doc.save();
-    const buffer = toArrayBuffer(bytes);
+    const bytes = await pdf.save();
+    download(bytes, "edited.pdf");
+  };
 
+  // ── MERGE ─────────────────────────────
+  const mergePDFs = async (files: File[]) => {
+    const merged = await PDFDocument.create();
+
+    for (const file of files) {
+      const bytes = await file.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes);
+
+      const pages = await merged.copyPages(pdf, pdf.getPageIndices());
+      pages.forEach((p) => merged.addPage(p));
+    }
+
+    const result = await merged.save();
+    download(result, "merged.pdf");
+  };
+
+  // ── SPLIT ─────────────────────────────
+  const splitPDF = async () => {
+    if (!pdfBytes) return;
+
+    const pdf = await PDFDocument.load(pdfBytes);
+
+    for (let i = 0; i < pdf.getPageCount(); i++) {
+      const newPdf = await PDFDocument.create();
+      const [page] = await newPdf.copyPages(pdf, [i]);
+      newPdf.addPage(page);
+
+      const bytes = await newPdf.save();
+      download(bytes, `page-${i + 1}.pdf`);
+    }
+  };
+
+  // ── DOWNLOAD ──────────────────────────
+  const download = (bytes: Uint8Array, name: string) => {
+    const buffer = toArrayBuffer(bytes);
     const url = URL.createObjectURL(new Blob([buffer]));
+
     const a = document.createElement("a");
     a.href = url;
-    a.download = "edited.pdf";
+    a.download = name;
     a.click();
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>Editor</h2>
+      <h2>{tool.toUpperCase()} TOOL</h2>
 
-      <button onClick={() => setActiveTool("text")}>Text</button>
-      <button onClick={exportPDF}>Export</button>
+      {tool === "edit" && (
+        <>
+          <input
+            placeholder="Enter text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <button onClick={exportPDF}>Export PDF</button>
+        </>
+      )}
 
-      <div>
-        Page {currentPage} / {pageCount}
-      </div>
+      {tool === "merge" && (
+        <input
+          type="file"
+          multiple
+          accept=".pdf"
+          onChange={(e) =>
+            mergePDFs(Array.from(e.target.files || []))
+          }
+        />
+      )}
 
-      <div style={{ position: "relative", marginTop: 20 }}>
-        <canvas ref={canvasRef} />
-        <canvas ref={overlayRef} onClick={handleClick} style={{ position: "absolute", top: 0 }} />
-      </div>
-
-      {pendingPos && (
-        <div>
-          <input value={textValue} onChange={(e) => setTextValue(e.target.value)} />
-          <button onClick={commitText}>Add</button>
-        </div>
+      {tool === "split" && (
+        <button onClick={splitPDF}>Split PDF</button>
       )}
     </div>
   );
