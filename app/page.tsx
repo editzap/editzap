@@ -10,14 +10,9 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("edit");
   const router = useRouter();
 
-  const handleFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      sessionStorage.setItem("pdfFile", reader.result as string);
-      sessionStorage.setItem("tool", tab);
-      router.push("/editor");
-    };
-    reader.readAsDataURL(file);
+  const goToEditor = (selected: Tab) => {
+    sessionStorage.setItem("tool", selected);
+    router.push("/editor");
   };
 
   return (
@@ -34,7 +29,9 @@ export default function Home() {
         style={hero}
       >
         <h1 style={title}>Edit PDFs in Seconds</h1>
-        <p style={subtitle}>Fast. Private. Beautiful.</p>
+        <p style={subtitle}>
+          Fast. Private. Beautiful.
+        </p>
       </motion.div>
 
       {/* TABS */}
@@ -59,26 +56,22 @@ export default function Home() {
         </div>
       </div>
 
-      {/* DROP ZONE */}
+      {/* ACTION CARD */}
       <motion.div
-        whileHover={{ scale: 1.02 }}
-        style={dropZone}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.98 }}
+        style={card}
+        onClick={() => goToEditor(tab)}
       >
-        <h3>{tab.toUpperCase()} PDF</h3>
+        <h3 style={{ marginBottom: 10 }}>
+          {tab === "edit" && "✏ Edit your PDF"}
+          {tab === "merge" && "⊞ Merge PDFs"}
+          {tab === "split" && "✂ Split PDF"}
+        </h3>
 
-        <label style={primaryBtn}>
-          Choose File
-          <input
-            type="file"
-            accept=".pdf"
-            hidden
-            onChange={(e) =>
-              e.target.files?.[0] && handleFile(e.target.files[0])
-            }
-          />
-        </label>
-
-        <p style={dropText}>or drag & drop</p>
+        <p style={cardText}>
+          Click to open {tab} tool
+        </p>
       </motion.div>
 
       {/* FEATURES */}
@@ -86,7 +79,7 @@ export default function Home() {
         {["⚡ Fast", "🔒 Private", "✨ Clean"].map((f, i) => (
           <motion.div
             key={i}
-            whileHover={{ y: -5 }}
+            whileHover={{ y: -6 }}
             style={featureCard}
           >
             {f}
@@ -131,7 +124,6 @@ const tabs: React.CSSProperties = {
   background: "#f3f4f6",
   padding: 6,
   borderRadius: 999,
-  position: "relative",
 };
 
 const tabBtn: React.CSSProperties = {
@@ -156,27 +148,18 @@ const tabText = (active: boolean): React.CSSProperties => ({
   fontWeight: 500,
 });
 
-const dropZone: React.CSSProperties = {
+const card: React.CSSProperties = {
+  marginTop: 20,
+  padding: 50,
   borderRadius: 20,
-  padding: 60,
   textAlign: "center",
   background: "linear-gradient(135deg, #fafafa, #f3f4f6)",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-};
-
-const primaryBtn: React.CSSProperties = {
-  padding: "12px 26px",
-  background: "#111",
-  color: "#fff",
-  borderRadius: 12,
+  boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
   cursor: "pointer",
-  marginTop: 10,
-  display: "inline-block",
 };
 
-const dropText: React.CSSProperties = {
-  marginTop: 10,
-  color: "#777",
+const cardText: React.CSSProperties = {
+  color: "#666",
 };
 
 const features: React.CSSProperties = {
