@@ -7,6 +7,9 @@ type Box = {
   x: number;
   y: number;
   text: string;
+  size: number;
+  color: string;
+  font: string;
 };
 
 export default function Home() {
@@ -15,6 +18,7 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [boxes, setBoxes] = useState<Box[]>([]);
+  const [selected, setSelected] = useState<number | null>(null);
 
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
   const [splitFile, setSplitFile] = useState<File | null>(null);
@@ -36,14 +40,26 @@ export default function Home() {
 
     const rect = containerRef.current.getBoundingClientRect();
 
-    setBoxes((prev) => [
-      ...prev,
-      {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-        text: "",
-      },
-    ]);
+    const newBox: Box = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      text: "",
+      size: 16,
+      color: "#000000",
+      font: "Helvetica",
+    };
+
+    setBoxes((prev) => [...prev, newBox]);
+  };
+
+  const updateBox = (changes: Partial<Box>) => {
+    if (selected === null) return;
+
+    setBoxes((prev) => {
+      const updated = [...prev];
+      updated[selected] = { ...updated[selected], ...changes };
+      return updated;
+    });
   };
 
   const exportPDF = async () => {
@@ -54,19 +70,33 @@ export default function Home() {
     const page = pdfDoc.getPages()[0];
     const height = page.getHeight();
 
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    for (const b of boxes) {
+      if (!b.text) continue;
 
-    boxes.forEach((b) => {
-      if (!b.text) return;
+      let font;
+      switch (b.font) {
+        case "Courier":
+          font = await pdfDoc.embedFont(StandardFonts.Courier);
+          break;
+        case "Times":
+          font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+          break;
+        default:
+          font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      }
+
+      const r = parseInt(b.color.slice(1, 3), 16) / 255;
+      const g = parseInt(b.color.slice(3, 5), 16) / 255;
+      const bl = parseInt(b.color.slice(5, 7), 16) / 255;
 
       page.drawText(b.text, {
         x: b.x,
         y: height - b.y,
-        size: 16,
+        size: b.size,
         font,
-        color: rgb(0, 0, 0),
+        color: rgb(r, g, bl),
       });
-    });
+    }
 
     const pdfBytes = await pdfDoc.save();
 
@@ -139,13 +169,7 @@ export default function Home() {
   return (
     <div style={{ background: "#f5f5f5", minHeight: "100vh", padding: 30 }}>
       
-      {/* HEADER */}
-      <div style={{ textAlign: "center" }}>
-        <h1 style={{ fontSize: 40, fontWeight: "bold" }}>⚡ EditZap</h1>
-        <p style={{ color: "#555" }}>
-          Fast, secure and free PDF tools
-        </p>
-      </div>
+      <h1 style={{ textAlign: "center" }}>⚡ EditZap</h1>
 
       {/* TABS */}
       <div style={{ textAlign: "center", marginTop: 20 }}>
@@ -157,11 +181,10 @@ export default function Home() {
               margin: 5,
               padding: "10px 20px",
               borderRadius: 20,
-              fontWeight: "bold",
-              border: "none",
               background: activeTab === tab ? "#000" : "#ddd",
               color: activeTab === tab ? "#fff" : "#000",
-              cursor: "pointer",
+              border: "none",
+              fontWeight: "bold",
             }}
           >
             {tab.toUpperCase()}
@@ -180,24 +203,51 @@ export default function Home() {
           boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
         }}
       >
-        {/* EDIT */}
         {activeTab === "edit" && (
           <>
             <h2>Edit PDF</h2>
 
             <input type="file" onChange={handleUpload} />
             <br /><br />
+
+            {/* TOOLBAR */}
+            {selected !== null && (
+              <div style={{ marginBottom: 10 }}>
+                <input
+                  type="number"
+                  value={boxes[selected].size}
+                  onChange={(e) =>
+                    updateBox({ size: parseInt(e.target.value) || 16 })
+                  }
+                />
+
+                <input
+                  type="color"
+                  value={boxes[selected].color}
+                  onChange={(e) =>
+                    updateBox({ color: e.target.value })
+                  }
+                />
+
+                <select
+                  onChange={(e) =>
+                    updateBox({ font: e.target.value })
+                  }
+                >
+                  <option value="Helvetica">Arial</option>
+                  <option value="Courier">Courier</option>
+                  <option value="Times">Times</option>
+                </select>
+              </div>
+            )}
+
             <button onClick={exportPDF}>EXPORT PDF</button>
 
             {pdfUrl && (
               <div
                 ref={containerRef}
                 onClick={handleClick}
-                style={{
-                  marginTop: 20,
-                  position: "relative",
-                  border: "2px solid black",
-                }}
+                style={{ position: "relative", marginTop: 20 }}
               >
                 <iframe src={pdfUrl} width="100%" height="500px" />
 
@@ -206,6 +256,10 @@ export default function Home() {
                     key={i}
                     contentEditable
                     suppressContentEditableWarning
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(i);
+                    }}
                     onInput={(e) => {
                       const val = (e.target as HTMLDivElement).innerText;
 
@@ -219,8 +273,14 @@ export default function Home() {
                       position: "absolute",
                       left: b.x,
                       top: b.y,
+                      fontSize: b.size,
+                      color: b.color,
+                      fontFamily: b.font,
+                      border:
+                        selected === i
+                          ? "2px solid black"
+                          : "1px solid gray",
                       background: "#fff",
-                      border: "1px solid black",
                       padding: 4,
                     }}
                   >
@@ -232,30 +292,23 @@ export default function Home() {
           </>
         )}
 
-        {/* MERGE */}
         {activeTab === "merge" && (
           <>
             <h2>Merge PDFs</h2>
             <input type="file" multiple onChange={handleMergeUpload} />
             <br /><br />
-            <button onClick={mergePDFs}>MERGE & DOWNLOAD</button>
+            <button onClick={mergePDFs}>MERGE</button>
           </>
         )}
 
-        {/* SPLIT */}
         {activeTab === "split" && (
           <>
             <h2>Split PDF</h2>
             <input type="file" onChange={handleSplitUpload} />
             <br /><br />
-            <button onClick={splitPDF}>SPLIT & DOWNLOAD</button>
+            <button onClick={splitPDF}>SPLIT</button>
           </>
         )}
-      </div>
-
-      {/* FOOTER */}
-      <div style={{ textAlign: "center", marginTop: 40, color: "#777" }}>
-        © 2026 EditZap — Free PDF Tools
       </div>
     </div>
   );
