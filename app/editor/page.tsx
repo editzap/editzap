@@ -10,14 +10,12 @@ export default function Editor() {
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [text, setText] = useState("");
 
-  // safe conversion
   const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
     const ab = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(ab).set(bytes);
     return ab;
   };
 
-  // load data
   useEffect(() => {
     const stored = sessionStorage.getItem("pdfFile");
     const tool = sessionStorage.getItem("tool") as Tab | null;
@@ -26,24 +24,19 @@ export default function Editor() {
 
     if (stored) {
       fetch(stored)
-        .then((res) => res.arrayBuffer())
-        .then((buf) => setPdfBytes(buf));
+        .then((r) => r.arrayBuffer())
+        .then(setPdfBytes);
     }
   }, []);
 
   // EDIT
   const exportPDF = async () => {
-    if (!pdfBytes) {
-      alert("Upload a PDF first");
-      return;
-    }
+    if (!pdfBytes) return alert("Upload PDF");
 
     const pdf = await PDFDocument.load(pdfBytes);
     const font = await pdf.embedFont(StandardFonts.Helvetica);
 
-    const page = pdf.getPages()[0];
-
-    page.drawText(text || "Sample Text", {
+    pdf.getPages()[0].drawText(text || "Text", {
       x: 50,
       y: 500,
       size: 20,
@@ -56,15 +49,12 @@ export default function Editor() {
 
   // MERGE
   const mergePDFs = async (files: File[]) => {
-    if (files.length < 2) {
-      alert("Select at least 2 PDFs");
-      return;
-    }
+    if (files.length < 2) return alert("Select 2+ PDFs");
 
     const merged = await PDFDocument.create();
 
-    for (const file of files) {
-      const pdf = await PDFDocument.load(await file.arrayBuffer());
+    for (const f of files) {
+      const pdf = await PDFDocument.load(await f.arrayBuffer());
       const pages = await merged.copyPages(pdf, pdf.getPageIndices());
       pages.forEach((p) => merged.addPage(p));
     }
@@ -74,10 +64,7 @@ export default function Editor() {
 
   // SPLIT
   const splitPDF = async () => {
-    if (!pdfBytes) {
-      alert("No PDF loaded");
-      return;
-    }
+    if (!pdfBytes) return alert("No PDF");
 
     const pdf = await PDFDocument.load(pdfBytes);
 
@@ -90,7 +77,6 @@ export default function Editor() {
     }
   };
 
-  // DOWNLOAD
   const download = (bytes: Uint8Array, name: string) => {
     const buffer = toArrayBuffer(bytes);
     const url = URL.createObjectURL(new Blob([buffer]));
@@ -120,7 +106,7 @@ export default function Editor() {
         ))}
       </div>
 
-      {/* Card */}
+      {/* Content */}
       <div style={card}>
         {tab === "edit" && (
           <>
@@ -129,23 +115,19 @@ export default function Editor() {
               onChange={(e) => setText(e.target.value)}
               placeholder="Enter text"
             />
-            <br />
-            <button onClick={exportPDF}>Export PDF</button>
+            <button onClick={exportPDF}>Export</button>
           </>
         )}
 
         {tab === "merge" && (
-          <>
-            <p>Select multiple PDFs:</p>
-            <input
-              type="file"
-              multiple
-              accept=".pdf"
-              onChange={(e) =>
-                mergePDFs(Array.from(e.target.files || []))
-              }
-            />
-          </>
+          <input
+            type="file"
+            multiple
+            accept=".pdf"
+            onChange={(e) =>
+              mergePDFs(Array.from(e.target.files || []))
+            }
+          />
         )}
 
         {tab === "split" && (
@@ -159,10 +141,7 @@ export default function Editor() {
 /* STYLES */
 const container: React.CSSProperties = {
   padding: 40,
-  maxWidth: 800,
-  margin: "auto",
   textAlign: "center",
-  fontFamily: "system-ui",
 };
 
 const title: React.CSSProperties = {

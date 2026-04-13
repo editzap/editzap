@@ -21,12 +21,7 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) handleFile(file);
@@ -49,25 +44,25 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Card */}
+      {/* Drop Zone */}
       <div
-        style={card}
+        style={dropZone}
         onDragOver={(e) => e.preventDefault()}
-        onDrop={handleDrop}
+        onDrop={onDrop}
       >
-        <h3>{tab.toUpperCase()} PDF</h3>
+        <p>Drag & Drop your PDF here</p>
 
         <label style={primaryBtn}>
-          Upload PDF
+          Choose File
           <input
             type="file"
             accept=".pdf"
             hidden
-            onChange={handleSelect}
+            onChange={(e) =>
+              e.target.files?.[0] && handleFile(e.target.files[0])
+            }
           />
         </label>
-
-        <p style={subText}>Drag & drop supported</p>
       </div>
     </div>
   );
@@ -76,8 +71,6 @@ export default function Home() {
 /* STYLES */
 const container: React.CSSProperties = {
   padding: 40,
-  maxWidth: 800,
-  margin: "auto",
   textAlign: "center",
   fontFamily: "system-ui",
 };
@@ -106,22 +99,18 @@ const activeTab: React.CSSProperties = {
   color: "#fff",
 };
 
-const card: React.CSSProperties = {
-  padding: 30,
+const dropZone: React.CSSProperties = {
+  border: "2px dashed #aaa",
+  padding: 40,
   borderRadius: 12,
-  boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
 };
 
 const primaryBtn: React.CSSProperties = {
+  marginTop: 10,
+  display: "inline-block",
   padding: "10px 20px",
   background: "#111",
   color: "#fff",
   borderRadius: 8,
   cursor: "pointer",
-  display: "inline-block",
-};
-
-const subText: React.CSSProperties = {
-  marginTop: 10,
-  color: "#666",
 };
