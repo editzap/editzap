@@ -15,6 +15,32 @@ export default function Home() {
     router.push("/editor");
   };
 
+  const tools: {
+    id: Tab;
+    title: string;
+    desc: string;
+    icon: string;
+  }[] = [
+    {
+      id: "edit",
+      title: "Edit PDF",
+      desc: "Add text and modify your file",
+      icon: "✏️",
+    },
+    {
+      id: "merge",
+      title: "Merge PDFs",
+      desc: "Combine multiple files into one",
+      icon: "📚",
+    },
+    {
+      id: "split",
+      title: "Split PDF",
+      desc: "Extract pages instantly",
+      icon: "✂️",
+    },
+  ];
+
   return (
     <div style={container}>
       {/* NAV */}
@@ -29,20 +55,14 @@ export default function Home() {
         style={hero}
       >
         <h1 style={title}>Edit PDFs in Seconds</h1>
-        <p style={subtitle}>
-          Fast. Private. Beautiful.
-        </p>
+        <p style={subtitle}>Fast. Private. Beautiful.</p>
       </motion.div>
 
       {/* TABS */}
       <div style={tabsWrapper}>
         <div style={tabs}>
           {(["edit", "merge", "split"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={tabBtn}
-            >
+            <button key={t} onClick={() => setTab(t)} style={tabBtn}>
               {tab === t && (
                 <motion.div
                   layoutId="active-pill"
@@ -56,23 +76,28 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ACTION CARD */}
-      <motion.div
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.98 }}
-        style={card}
-        onClick={() => goToEditor(tab)}
-      >
-        <h3 style={{ marginBottom: 10 }}>
-          {tab === "edit" && "✏ Edit your PDF"}
-          {tab === "merge" && "⊞ Merge multiple PDFs"}
-          {tab === "split" && "✂ Split PDF into pages"}
-        </h3>
-
-        <p style={cardText}>
-          Open {tab} tool →
-        </p>
-      </motion.div>
+      {/* TOOL CARDS */}
+      <div style={toolsGrid}>
+        {tools.map((t) => (
+          <motion.div
+            key={t.id}
+            whileHover={{ y: -8, scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              ...toolCard,
+              ...(tab === t.id ? activeToolCard : {}),
+            }}
+            onClick={() => {
+              setTab(t.id);
+              goToEditor(t.id);
+            }}
+          >
+            <div style={icon}>{t.icon}</div>
+            <h3>{t.title}</h3>
+            <p style={cardText}>{t.desc}</p>
+          </motion.div>
+        ))}
+      </div>
 
       {/* FEATURES */}
       <div style={features}>
@@ -148,14 +173,29 @@ const tabText = (active: boolean): React.CSSProperties => ({
   fontWeight: 500,
 });
 
-const card: React.CSSProperties = {
-  marginTop: 20,
-  padding: 60,
-  borderRadius: 20,
-  textAlign: "center",
+const toolsGrid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: 20,
+  marginTop: 30,
+};
+
+const toolCard: React.CSSProperties = {
+  padding: 30,
+  borderRadius: 18,
   background: "linear-gradient(135deg, #fafafa, #f3f4f6)",
-  boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+  boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
   cursor: "pointer",
+  textAlign: "center",
+};
+
+const activeToolCard: React.CSSProperties = {
+  outline: "2px solid #111",
+};
+
+const icon: React.CSSProperties = {
+  fontSize: 32,
+  marginBottom: 10,
 };
 
 const cardText: React.CSSProperties = {
