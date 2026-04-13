@@ -17,16 +17,8 @@ export default function Editor() {
   };
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("pdfFile");
     const tool = sessionStorage.getItem("tool") as Tab | null;
-
     if (tool) setTab(tool);
-
-    if (stored) {
-      fetch(stored)
-        .then((r) => r.arrayBuffer())
-        .then(setPdfBytes);
-    }
   }, []);
 
   const exportPDF = async () => {
@@ -88,29 +80,51 @@ export default function Editor() {
 
   return (
     <div style={container}>
-      {/* TABS */}
-      <div style={tabs}>
-        {(["edit", "merge", "split"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={tab === t ? activeTab : tabBtn}
-          >
-            {t.toUpperCase()}
-          </button>
-        ))}
+      {/* HERO */}
+      <div style={hero}>
+        <h1 style={title}>Editor</h1>
+        <p style={subtitle}>Modify your PDFs with ease</p>
       </div>
 
-      {/* CONTENT */}
+      {/* TABS */}
+      <div style={tabsWrapper}>
+        <div style={tabs}>
+          {(["edit", "merge", "split"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                ...tabBtn,
+                ...(tab === t ? activeTab : {}),
+              }}
+            >
+              {t.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* CARD */}
       <div style={card}>
         {tab === "edit" && (
           <>
             <input
+              type="file"
+              accept=".pdf"
+              onChange={(e) =>
+                e.target.files?.[0] &&
+                e.target.files[0].arrayBuffer().then(setPdfBytes)
+              }
+            />
+            <input
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Enter text"
+              style={input}
             />
-            <button onClick={exportPDF}>Export</button>
+            <button onClick={exportPDF} style={primaryBtn}>
+              Export PDF
+            </button>
           </>
         )}
 
@@ -126,7 +140,19 @@ export default function Editor() {
         )}
 
         {tab === "split" && (
-          <button onClick={splitPDF}>Split PDF</button>
+          <>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={(e) =>
+                e.target.files?.[0] &&
+                e.target.files[0].arrayBuffer().then(setPdfBytes)
+              }
+            />
+            <button onClick={splitPDF} style={primaryBtn}>
+              Split PDF
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -134,29 +160,76 @@ export default function Editor() {
 }
 
 /* STYLES */
+
 const container: React.CSSProperties = {
   padding: 40,
+  maxWidth: 800,
+  margin: "auto",
+  fontFamily: "system-ui",
+};
+
+const hero: React.CSSProperties = {
+  textAlign: "center",
+  marginBottom: 30,
+};
+
+const title: React.CSSProperties = {
+  fontSize: 36,
+  fontWeight: 700,
+};
+
+const subtitle: React.CSSProperties = {
+  color: "#666",
+};
+
+/* TABS */
+const tabsWrapper: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  marginBottom: 20,
 };
 
 const tabs: React.CSSProperties = {
   display: "flex",
-  gap: 10,
-  marginBottom: 20,
+  background: "#f3f4f6",
+  padding: 6,
+  borderRadius: 999,
 };
 
 const tabBtn: React.CSSProperties = {
-  padding: "8px 16px",
+  padding: "8px 18px",
+  borderRadius: 999,
+  border: "none",
+  background: "transparent",
   cursor: "pointer",
 };
 
 const activeTab: React.CSSProperties = {
-  ...tabBtn,
   background: "#111",
   color: "#fff",
 };
 
+/* CARD */
 const card: React.CSSProperties = {
-  padding: 20,
+  padding: 30,
+  borderRadius: 16,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+};
+
+const input: React.CSSProperties = {
+  padding: 10,
+  borderRadius: 8,
   border: "1px solid #ccc",
+};
+
+const primaryBtn: React.CSSProperties = {
+  padding: "10px 16px",
+  background: "#111",
+  color: "#fff",
   borderRadius: 10,
+  cursor: "pointer",
+  border: "none",
 };
