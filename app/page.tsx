@@ -21,12 +21,6 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
-  };
-
   return (
     <div style={container}>
       {/* NAV */}
@@ -38,32 +32,31 @@ export default function Home() {
       <div style={hero}>
         <h1 style={title}>Edit PDFs in Seconds</h1>
         <p style={subtitle}>
-          No uploads. No accounts. Just fast, private PDF tools.
+          Fast. Private. No uploads. Just clean tools.
         </p>
       </div>
 
       {/* TABS */}
-      <div style={tabs}>
-        {(["edit", "merge", "split"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={tab === t ? activeTab : tabBtn}
-          >
-            {t.toUpperCase()}
-          </button>
-        ))}
+      <div style={tabsWrapper}>
+        <div style={tabs}>
+          {(["edit", "merge", "split"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                ...tabBtn,
+                ...(tab === t ? activeTab : {}),
+              }}
+            >
+              {t.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* DROP ZONE */}
-      <div
-        style={dropZone}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={onDrop}
-      >
+      <div style={dropZone}>
         <h3>{tab.toUpperCase()} PDF</h3>
-
-        <p style={dropText}>Drag & drop your file here</p>
 
         <label style={primaryBtn}>
           Choose File
@@ -76,28 +69,21 @@ export default function Home() {
             }
           />
         </label>
+
+        <p style={dropText}>or drag & drop</p>
       </div>
 
       {/* FEATURES */}
       <div style={features}>
-        <Feature title="⚡ Fast" text="Instant processing in your browser" />
-        <Feature title="🔒 Private" text="Files never leave your device" />
-        <Feature title="✨ Simple" text="Clean and easy to use" />
-      </div>
-
-      {/* SEO / DESCRIPTION */}
-      <div style={seo}>
-        <h3>Free Online PDF Editor</h3>
-        <p>
-          EditZap lets you edit, merge, and split PDFs instantly in your browser.
-          No uploads, no signups — just fast and secure PDF tools.
-        </p>
+        <Feature title="⚡ Fast" text="Instant processing" />
+        <Feature title="🔒 Private" text="No uploads" />
+        <Feature title="✨ Simple" text="Clean experience" />
       </div>
     </div>
   );
 }
 
-// ── COMPONENT ──
+// COMPONENT
 function Feature({ title, text }: { title: string; text: string }) {
   return (
     <div style={featureCard}>
@@ -107,7 +93,7 @@ function Feature({ title, text }: { title: string; text: string }) {
   );
 }
 
-// ── STYLES ──
+// STYLES
 const container: React.CSSProperties = {
   padding: 40,
   maxWidth: 1000,
@@ -133,44 +119,55 @@ const subtitle: React.CSSProperties = {
   color: "#666",
 };
 
-const tabs: React.CSSProperties = {
+const tabsWrapper: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
-  gap: 10,
   marginBottom: 20,
 };
 
+const tabs: React.CSSProperties = {
+  display: "flex",
+  background: "#f3f4f6",
+  padding: 6,
+  borderRadius: 999,
+  gap: 6,
+};
+
 const tabBtn: React.CSSProperties = {
-  padding: "8px 16px",
-  borderRadius: 8,
-  border: "1px solid #ddd",
+  padding: "8px 18px",
+  borderRadius: 999,
+  border: "none",
+  background: "transparent",
   cursor: "pointer",
+  transition: "all 0.25s ease",
 };
 
 const activeTab: React.CSSProperties = {
-  ...tabBtn,
   background: "#111",
   color: "#fff",
+  transform: "scale(1.05)",
 };
 
 const dropZone: React.CSSProperties = {
   border: "2px dashed #aaa",
-  padding: 40,
-  borderRadius: 12,
+  padding: 50,
+  borderRadius: 16,
   textAlign: "center",
+  transition: "all 0.3s ease",
 };
 
 const dropText: React.CSSProperties = {
-  marginBottom: 10,
+  marginTop: 10,
   color: "#666",
 };
 
 const primaryBtn: React.CSSProperties = {
-  padding: "10px 20px",
+  padding: "12px 24px",
   background: "#111",
   color: "#fff",
-  borderRadius: 8,
+  borderRadius: 10,
   cursor: "pointer",
+  marginTop: 10,
 };
 
 const features: React.CSSProperties = {
@@ -178,18 +175,11 @@ const features: React.CSSProperties = {
   justifyContent: "center",
   gap: 20,
   marginTop: 40,
-  flexWrap: "wrap",
 };
 
 const featureCard: React.CSSProperties = {
   padding: 16,
-  borderRadius: 10,
-  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-  width: 180,
-};
-
-const seo: React.CSSProperties = {
-  marginTop: 50,
-  textAlign: "center",
-  color: "#666",
+  borderRadius: 12,
+  boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+  transition: "transform 0.2s ease",
 };
