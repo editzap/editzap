@@ -91,8 +91,10 @@ export default function Editor() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <h1 style={title}>Editor</h1>
-        <p style={subtitle}>Modify your PDFs with ease</p>
+        <h1 style={title}>PDF Editor Tool</h1>
+        <p style={subtitle}>
+          Edit, merge, and split PDF files online easily
+        </p>
       </motion.div>
 
       {/* TABS */}
@@ -102,9 +104,9 @@ export default function Editor() {
             <button key={t} onClick={() => setTab(t)} style={tabBtn}>
               {tab === t && (
                 <motion.div
-                  layoutId="editor-pill"
-                  style={activePill}
+                  layoutId="pill"
                   transition={{ type: "spring", stiffness: 300 }}
+                  style={activePill}
                 />
               )}
               <span style={tabText(tab === t)}>{t.toUpperCase()}</span>
@@ -113,7 +115,7 @@ export default function Editor() {
         </div>
       </div>
 
-      {/* CARD */}
+      {/* TOOL CARD */}
       <motion.div
         key={tab}
         style={card}
@@ -127,7 +129,7 @@ export default function Editor() {
               <input
                 type="file"
                 accept=".pdf"
-                hidden
+                style={{ display: "none" }}
                 onChange={(e) =>
                   e.target.files?.[0] &&
                   e.target.files[0].arrayBuffer().then(setPdfBytes)
@@ -159,7 +161,7 @@ export default function Editor() {
               type="file"
               multiple
               accept=".pdf"
-              hidden
+              style={{ display: "none" }}
               onChange={(e) =>
                 mergePDFs(Array.from(e.target.files || []))
               }
@@ -174,7 +176,7 @@ export default function Editor() {
               <input
                 type="file"
                 accept=".pdf"
-                hidden
+                style={{ display: "none" }}
                 onChange={(e) =>
                   e.target.files?.[0] &&
                   e.target.files[0].arrayBuffer().then(setPdfBytes)
@@ -192,6 +194,38 @@ export default function Editor() {
           </>
         )}
       </motion.div>
+
+      {/* CONTENT (ADSENSE IMPORTANT) */}
+      <div style={contentSection}>
+        <h2>Online PDF Editor</h2>
+        <p style={contentText}>
+          This online PDF editor allows you to edit, merge, and split PDF files
+          quickly and securely. No installation is required, and everything works
+          directly in your browser.
+        </p>
+
+        <h3>How to Use</h3>
+        <ul style={contentList}>
+          <li>Upload your PDF file</li>
+          <li>Select the tool you need</li>
+          <li>Make changes instantly</li>
+          <li>Download the final file</li>
+        </ul>
+
+        <h3>Why Choose This Tool?</h3>
+        <p style={contentText}>
+          Our PDF tools are designed for speed, simplicity, and privacy. You can
+          process files on any device without installing heavy software.
+        </p>
+
+        <h3>FAQ</h3>
+        <p style={contentText}>
+          <b>Is this tool free?</b> Yes, basic features are free to use.
+        </p>
+        <p style={contentText}>
+          <b>Are my files safe?</b> Files are processed securely and not stored.
+        </p>
+      </div>
     </motion.div>
   );
 }
@@ -235,7 +269,7 @@ const tabs: React.CSSProperties = {
 
 const tabBtn: React.CSSProperties = {
   position: "relative",
-  padding: "8px 18px",
+  padding: "10px 20px",
   border: "none",
   background: "transparent",
   cursor: "pointer",
@@ -285,4 +319,24 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: 10,
   cursor: "pointer",
   border: "none",
+};
+
+/* CONTENT */
+const contentSection: React.CSSProperties = {
+  marginTop: 60,
+  maxWidth: 800,
+  marginInline: "auto",
+};
+
+const contentText: React.CSSProperties = {
+  color: "#555",
+  lineHeight: 1.7,
+  marginTop: 10,
+};
+
+const contentList: React.CSSProperties = {
+  marginTop: 10,
+  paddingLeft: 20,
+  color: "#555",
+  lineHeight: 1.8,
 };

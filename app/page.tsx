@@ -102,6 +102,72 @@ export default function Home() {
           </motion.div>
         ))}
       </div>
+
+      {/* CONTENT STARTS HERE */}
+
+      {/* INTRO */}
+      <div style={contentSection}>
+        <h2>Free Online PDF Editor</h2>
+        <p style={contentText}>
+          Our online PDF editor helps you edit, merge, and split PDF files
+          quickly without installing any software. Whether you need to combine
+          documents, extract pages, or make quick edits, this tool is designed
+          for speed, simplicity, and privacy.
+        </p>
+      </div>
+
+      {/* HOW IT WORKS */}
+      <div style={contentSection}>
+        <h2>How It Works</h2>
+        <ol style={contentList}>
+          <li>Upload your PDF file</li>
+          <li>Select a tool (Edit, Merge, or Split)</li>
+          <li>Make your changes instantly</li>
+          <li>Download your updated PDF</li>
+        </ol>
+      </div>
+
+      {/* SEO CONTENT */}
+      <div style={contentSection}>
+        <h2>Why Use Our PDF Tools?</h2>
+
+        <p style={contentText}>
+          PDF files are widely used for sharing documents, but editing them can
+          be difficult without the right tools. Our platform provides an easy
+          way to edit PDFs online without installing heavy software.
+        </p>
+
+        <p style={contentText}>
+          You can merge multiple PDFs into a single file, split large PDFs into
+          smaller parts, and quickly edit text or content. Everything works
+          directly in your browser, making it accessible on any device.
+        </p>
+
+        <p style={contentText}>
+          We focus on speed, simplicity, and user privacy so you can complete
+          your tasks efficiently without unnecessary complications.
+        </p>
+      </div>
+
+      {/* FAQ */}
+      <div style={contentSection}>
+        <h2>Frequently Asked Questions</h2>
+
+        <h4>Is this PDF editor free?</h4>
+        <p style={contentText}>
+          Yes, our core PDF tools are free to use.
+        </p>
+
+        <h4>Are my files secure?</h4>
+        <p style={contentText}>
+          Yes, your files are processed securely and are not stored permanently.
+        </p>
+
+        <h4>Do I need to install anything?</h4>
+        <p style={contentText}>
+          No installation is required. Everything works in your browser.
+        </p>
+      </div>
     </div>
   );
 }
@@ -209,4 +275,24 @@ const featureCard: React.CSSProperties = {
   borderRadius: 14,
   background: "#fff",
   boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+};
+
+/* CONTENT */
+const contentSection: React.CSSProperties = {
+  marginTop: 60,
+  maxWidth: 800,
+  marginInline: "auto",
+};
+
+const contentText: React.CSSProperties = {
+  color: "#555",
+  lineHeight: 1.7,
+  marginTop: 10,
+};
+
+const contentList: React.CSSProperties = {
+  marginTop: 10,
+  paddingLeft: 20,
+  color: "#555",
+  lineHeight: 1.8,
 };
